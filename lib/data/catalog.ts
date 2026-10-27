@@ -2,10 +2,27 @@ import { createClient } from "@/lib/supabase/client";
 import { Product, Category } from "@/types";
 import { PRODUCTS, CATEGORIES } from "./mock-catalog";
 
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return Boolean(
+    url &&
+    key &&
+    !url.includes("your-project") &&
+    !url.includes("placeholder") &&
+    !key.includes("...") &&
+    !key.includes("placeholder")
+  );
+}
+
 /**
  * Fetch all categories
  */
 export async function getCategories(): Promise<Category[]> {
+  if (!isSupabaseConfigured()) {
+    return CATEGORIES;
+  }
+
   try {
     const supabase = createClient();
     const { data, error } = await supabase
