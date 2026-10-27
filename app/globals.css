@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 40 20% 98%;
+    --foreground: 24 10% 12%;
+
+    --card: 40 25% 99%;
+    --card-foreground: 24 10% 12%;
+
+    --popover: 40 25% 99%;
+    --popover-foreground: 24 10% 12%;
+
+    --primary: 24 65% 32%;
+    --primary-foreground: 40 30% 98%;
+
+    --secondary: 35 20% 92%;
+    --secondary-foreground: 24 20% 20%;
+
+    --muted: 36 15% 94%;
+    --muted-foreground: 25 10% 45%;
+
+    --accent: 28 45% 90%;
+    --accent-foreground: 24 60% 25%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 35 15% 88%;
+    --input: 35 15% 88%;
+    --ring: 24 65% 32%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 24 10% 10%;
+    --foreground: 40 20% 96%;
+
+    --card: 24 10% 13%;
+    --card-foreground: 40 20% 96%;
+
+    --popover: 24 10% 13%;
+    --popover-foreground: 40 20% 96%;
+
+    --primary: 28 60% 55%;
+    --primary-foreground: 24 10% 10%;
+
+    --secondary: 24 10% 18%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 24 10% 18%;
+    --muted-foreground: 35 10% 65%;
+
+    --accent: 24 25% 22%;
+    --accent-foreground: 40 30% 95%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 24 10% 20%;
+    --input: 24 10% 20%;
+    --ring: 28 60% 55%;
+  }
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Elegant luxury styling */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(220, 215, 205, 0.5);
+}
+
+.dark .glass-panel {
+  background: rgba(24, 23, 22, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(60, 56, 54, 0.5);
+}
+
+/* Subtle gold shimmer for premium crockery badges */
+@keyframes gold-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.gold-shimmer {
+  background: linear-gradient(90deg, #d97706 0%, #fde68a 50%, #d97706 100%);
+  background-size: 200% 100%;
+  animation: gold-shimmer 3.5s infinite linear;
+}
