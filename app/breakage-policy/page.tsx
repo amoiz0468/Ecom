@@ -4,7 +4,7 @@ import { ShieldCheck, Video, RefreshCw, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "100% Free Transit Breakage Guarantee & Unboxing Policy | Khaak & Khazaf",
+  title: "100% Free Transit Breakage Guarantee & Unboxing Policy | Almoin Crockery",
   description: "Learn about our breakage replacement guarantee for dinnerware and ceramics across Pakistan.",
 };
 

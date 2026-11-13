@@ -7,8 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "tsx scripts/test-business-logic.ts"
+    "lint": "eslint .",
+    "test": "tsx scripts/test-business-logic.ts",
+    "db:sync": "tsx scripts/sync-supabase.ts"
   },
   "repository": {
     "type": "git",

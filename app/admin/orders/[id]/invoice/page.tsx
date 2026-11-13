@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/orders";
 import { formatPKR } from "@/lib/utils";
-import { ShieldAlert, Printer, ArrowLeft } from "lucide-react";
+import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { PrintSlipButton } from "@/components/admin/PrintSlipButton";
 import Link from "next/link";
 
 interface InvoicePageProps {
@@ -19,7 +20,7 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
   const isCOD = order.cod_fee_pkr > 0 && order.payment_status === "unpaid";
 
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-900 p-4 sm:p-8 print:p-0 print:bg-white text-stone-900">
+    <div className="min-h-screen bg-stone-100 p-4 sm:p-8 print:p-0 print:bg-white text-stone-900">
       {/* Non-printable action bar */}
       <div className="max-w-3xl mx-auto mb-6 flex justify-between items-center print:hidden">
         <Link
@@ -28,33 +29,34 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
         >
           <ArrowLeft className="w-4 h-4" /> Back to Orders
         </Link>
-        <button
-          onClick={() => {
-            // Client-side print trigger
-          }}
-          className="px-4 py-2 bg-stone-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:opacity-90"
-        >
-          <Printer className="w-4 h-4" /> Print Packing Slip (Ctrl + P)
-        </button>
+        <PrintSlipButton />
       </div>
 
       {/* Slip Document */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl border border-stone-300 shadow-sm print:border-none print:shadow-none print:p-2 text-stone-900 text-xs">
         {/* Header */}
         <div className="flex justify-between items-start pb-6 border-b-2 border-stone-900">
-          <div>
-            <h1 className="font-serif text-2xl font-bold tracking-wider">
-              KHAAK & KHAZAF
-            </h1>
-            <p className="text-[10px] uppercase tracking-widest text-stone-500 font-sans">
-              Luxury Crockery & Fine Ceramics • Pakistan
-            </p>
-            <p className="text-[11px] text-stone-600 mt-1">
-              Fulfillment Hub: Plot 18-C, Korangi Industrial Area, Karachi, Pakistan
-            </p>
-            <p className="text-[11px] text-stone-600">
-              Helpline: {process.env.NEXT_PUBLIC_STORE_PHONE || "+92 21 35812345"} • WhatsApp: {process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+923001234567"}
-            </p>
+          <div className="flex items-start gap-3.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Almoin Crockery"
+              className="h-14 w-auto object-contain shrink-0"
+            />
+            <div>
+              <h1 className="font-serif text-2xl font-bold tracking-wider">
+                ALMOIN CROCKERY
+              </h1>
+              <p className="text-[10px] uppercase tracking-widest text-stone-500 font-sans">
+                Luxury Crockery &amp; Fine Ceramics • Pakistan
+              </p>
+              <p className="text-[11px] text-stone-600 mt-1">
+                Fulfillment Hub: Plot 18-C, Korangi Industrial Area, Karachi, Pakistan
+              </p>
+              <p className="text-[11px] text-stone-600">
+                Helpline: {process.env.NEXT_PUBLIC_STORE_PHONE || "+92 21 35812345"} • WhatsApp: {process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+923001234567"}
+              </p>
+            </div>
           </div>
 
           <div className="text-right">

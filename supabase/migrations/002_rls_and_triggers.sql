@@ -69,12 +69,20 @@ create policy "Public can read active shipping rates"
   on public.shipping_rates for select using (is_active = true);
 
 -- Profiles
-create policy "Users can view and edit own profile"
-  on public.profiles for all
+create policy "Users can view own profile"
+  on public.profiles for select
   using (auth.uid() = id);
 
-create policy "Admins can view all profiles"
-  on public.profiles for select
+create policy "Users can update own non-role profile fields"
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id and
+    role = (select p.role from public.profiles p where p.id = auth.uid())
+  );
+
+create policy "Admins can manage all profiles"
+  on public.profiles for all
   using (public.is_admin());
 
 -- Addresses
@@ -87,7 +95,7 @@ create policy "Anyone can manage their own cart by session or auth"
   on public.carts for all
   using (
     (auth.uid() is not null and customer_id = auth.uid()) or
-    session_token is not null
+    (session_token is not null and session_token = coalesce(current_setting('request.headers', true)::json->>'x-session-token', ''))
   );
 
 create policy "Anyone can manage cart items"
@@ -97,7 +105,7 @@ create policy "Anyone can manage cart items"
       select 1 from public.carts
       where id = cart_items.cart_id and (
         (auth.uid() is not null and customer_id = auth.uid()) or
-        session_token is not null
+        (session_token is not null and session_token = coalesce(current_setting('request.headers', true)::json->>'x-session-token', ''))
       )
     )
   );
@@ -207,6 +215,11 @@ begin
   end loop;
 end;
 $$ language plpgsql security definer;
+
+revoke execute on function public.reserve_order_stock(uuid) from public, anon, authenticated;
+revoke execute on function public.restore_order_stock(uuid) from public, anon, authenticated;
+grant execute on function public.reserve_order_stock(uuid) to service_role;
+grant execute on function public.restore_order_stock(uuid) to service_role;
 
 -- 5. Trigger: Automatically Create Profile on Auth Signup
 create or replace function public.handle_new_user()

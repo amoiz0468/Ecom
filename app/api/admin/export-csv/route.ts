@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { getProducts } from "@/lib/data/catalog";
+import { getAdminSession } from "@/lib/auth/admin";
 
 export async function GET() {
-  const products = await getProducts();
+  const session = await getAdminSession();
+  if (!session || session.role !== "admin") {
+    return NextResponse.json(
+      { error: "Unauthorized: Admin credentials required" },
+      { status: 401 }
+    );
+  }
 
-  let csv = "Product Name,Slug,Material,Variant SKU,Variant Title,Price PKR,Compare Price PKR,Stock,Weight (g),Dishwasher Safe,Microwave Safe\n";
+  const products = await getProducts({ includeUnpublished: true });
+
+  let csv =
+    "Product Name,Slug,Material,Variant SKU,Variant Title,Price PKR,Compare Price PKR,Stock,Weight (g),Dishwasher Safe,Microwave Safe\n";
 
   products.forEach((p) => {
     p.variants.forEach((v) => {

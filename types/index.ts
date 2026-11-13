@@ -143,6 +143,7 @@ export interface Order {
   guest_info: GuestInfo;
   status: OrderStatus;
   payment_status: PaymentStatus;
+  payment_method?: PaymentProviderId;
   shipping_address: PakistaniAddress;
   subtotal_pkr: number;
   discount_pkr: number;
@@ -154,10 +155,21 @@ export interface Order {
   courier_code: CourierCode;
   tracking_number?: string;
   tracking_url?: string;
+  payment_proof_url?: string;
   items: OrderItem[];
   payment?: PaymentRecord;
   created_at: string;
   updated_at: string;
+}
+
+export interface CustomerInquiry {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  message: string;
+  status: "unread" | "resolved";
+  created_at: string;
 }
 
 export interface ShippingZone {
@@ -169,4 +181,32 @@ export interface ShippingZone {
   per_kg_extra_pkr: number;
   free_shipping_threshold_pkr: number;
   cod_fee_pkr: number;
+}
+
+export interface DiscountCode {
+  id: string;
+  code: string;
+  description: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order_amount_pkr: number;
+  usage_limit?: number;
+  times_used: number;
+  is_active: boolean;
+}
+
+export interface StoreSettings {
+  store_name: string;
+  whatsapp_number: string;
+  store_phone: string;
+  store_email: string;
+  free_shipping_threshold_pkr: number;
+  cod_fee_pkr: number;
+  max_cod_limit_pkr: number;
+  fragile_packaging_fee_pkr: number;
+  bank_name: string;
+  bank_account_title: string;
+  bank_iban: string;
+  jazzcash_number: string;
+  easypaisa_number: string;
 }

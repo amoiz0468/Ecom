@@ -3,7 +3,7 @@ import { Footer } from "@/components/storefront/Footer";
 import { Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const metadata = {
-  title: "Crockery Care Guide: Ceramics & Fine Bone China | Khaak & Khazaf",
+  title: "Crockery Care Guide: Ceramics & Fine Bone China | Almoin Crockery",
   description: "Learn how to preserve the glaze, gold gilding, and thermal resilience of your dinner sets.",
 };
 

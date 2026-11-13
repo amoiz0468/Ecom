@@ -11,7 +11,20 @@ export class SafepayProvider implements PaymentProvider {
   private secretKey = process.env.SAFEPAY_SECRET_KEY || "sand_dummy_secret";
   private baseUrl = process.env.NEXT_PUBLIC_SAFEPAY_URL || "https://sandbox.api.getsafepay.com";
 
-  isAvailable(): { available: boolean } {
+  isAvailable(): { available: boolean; reason?: string } {
+    const key = process.env.SAFEPAY_API_KEY?.trim() || "";
+    const configured =
+      Boolean(key) &&
+      !key.includes("xxxxxxx") &&
+      !key.includes("dummy") &&
+      !key.includes("placeholder");
+
+    if (!configured) {
+      return {
+        available: false,
+        reason: "Online card gateway is not yet activated. Please choose COD or Bank Transfer.",
+      };
+    }
     return { available: true };
   }
 
@@ -45,21 +58,33 @@ export class SafepayProvider implements PaymentProvider {
     signature?: string;
     payload?: string;
   }): Promise<PaymentVerificationResult> {
-    // If webhook signature is present, verify with HMAC SHA256
-    if (params.signature && params.payload) {
-      const computed = crypto
-        .createHmac("sha256", this.secretKey)
-        .update(params.payload)
-        .digest("hex");
+    if (!params.signature || !params.payload) {
+      return {
+        verified: false,
+        orderId: params.orderId,
+        amountPkr: 0,
+        error: "Missing webhook signature or payload.",
+      };
+    }
 
-      if (computed !== params.signature) {
-        return {
-          verified: false,
-          orderId: params.orderId,
-          amountPkr: 0,
-          error: "Invalid webhook HMAC signature.",
-        };
-      }
+    const computed = crypto
+      .createHmac("sha256", this.secretKey)
+      .update(params.payload)
+      .digest("hex");
+
+    const sigBuffer = Buffer.from(params.signature, "utf8");
+    const compBuffer = Buffer.from(computed, "utf8");
+
+    if (
+      sigBuffer.length !== compBuffer.length ||
+      !crypto.timingSafeEqual(sigBuffer, compBuffer)
+    ) {
+      return {
+        verified: false,
+        orderId: params.orderId,
+        amountPkr: 0,
+        error: "Invalid webhook HMAC signature.",
+      };
     }
 
     return {

@@ -1,232 +1,272 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getProducts, getCategories } from "@/lib/data/catalog";
+import { SettingsRepository } from "@/lib/db/repositories";
+import { formatPKR } from "@/lib/utils";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Footer } from "@/components/storefront/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
-import { ShieldCheck, Truck, Sparkles, CheckCircle2, ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, ShieldCheck, Truck, Sparkles, MessageCircle } from "lucide-react";
+
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([
-    getProducts({ featuredOnly: true }),
+  // Single parallel query instead of redundant catalog fetches
+  const [allProducts, categories] = await Promise.all([
+    getProducts(),
     getCategories(),
   ]);
+  const storeSettings = SettingsRepository.getStoreSettings();
 
-  const allProducts = await getProducts();
+  const rawFeatured = allProducts.filter((p) => p.is_featured);
+  const featuredProducts = (rawFeatured.length > 0 ? rawFeatured : allProducts).slice(0, 4);
   const newArrivals = allProducts.slice(4, 8);
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+923001234567";
+  const heroImageUrl =
+    featuredProducts[0]?.images[0]?.image_url ||
+    allProducts[0]?.images[0]?.image_url ||
+    "/logo-card.jpg";
+  const whatsappNumber =
+    storeSettings.whatsapp_number ||
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
+    "+923001234567";
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://almoincrockery.pk";
+  const storeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: storeSettings.store_name || "Almoin Crockery",
+    url: baseUrl,
+    logo: `${baseUrl}/logo-card.jpg`,
+    image: `${baseUrl}/logo-card.jpg`,
+    priceRange: "PKR",
+    telephone: whatsappNumber,
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "PK",
+    },
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100">
+    <div className="min-h-screen flex flex-col bg-[#fdfbf7] text-stone-800">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(storeJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Navbar />
       <CartDrawer />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden bg-stone-900 text-stone-100 py-16 sm:py-24 lg:py-32">
-          {/* Background Image with Warm Gradient Overlay */}
-          <div className="absolute inset-0 z-0 opacity-40">
-            <Image
-              src="https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1600"
-              alt="Luxury Crockery Dinnerware Setting"
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/80 to-transparent z-1" />
+        {/* 1. Clean, Spacious Hero */}
+        <section className="py-12 sm:py-20 border-b border-stone-200/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+              <div className="lg:col-span-6 space-y-6">
+                <p className="text-xs uppercase tracking-[0.22em] text-amber-800 font-medium">
+                  Fine Bone China &amp; Ceramics
+                </p>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold tracking-wide mb-6">
-                <Sparkles className="w-3.5 h-3.5" />
-                Handcrafted Tableware & Fine Bone China
+                <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-stone-900 leading-[1.12]">
+                  Timeless Tableware for Modern Homes
+                </h1>
+
+                <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-lg">
+                  Artisan dinner sets, stoneware bowls, and serving platters—safely delivered across Pakistan with Cash on Delivery.
+                </p>
+
+                <div className="pt-1 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/shop"
+                    className="px-6 py-3.5 rounded-full bg-stone-900 hover:bg-amber-800 text-white font-medium text-xs sm:text-sm transition inline-flex items-center gap-2"
+                  >
+                    Shop Collection <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    href="/shop?category=dinner-sets"
+                    className="px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-medium text-xs sm:text-sm transition"
+                  >
+                    Dinner Sets
+                  </Link>
+                </div>
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-100 leading-[1.15]">
-                Elevate Every <br />
-                <span className="italic font-normal text-amber-400">Dastarkhwan</span> with Timeless Ceramics
-              </h1>
-
-              <p className="mt-6 text-base sm:text-lg text-stone-300 leading-relaxed font-light">
-                From 24-piece royal Mughal bone china dinner sets to authentic cobalt blue Multani platters. Delivered safely across Pakistan with Cash on Delivery and our 100% Transit Breakage Guarantee.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="lg:col-span-6">
                 <Link
                   href="/shop"
-                  className="px-6 py-3.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium text-sm transition flex items-center gap-2 shadow-lg shadow-amber-900/30"
+                  className="block relative aspect-4/3 rounded-3xl overflow-hidden bg-stone-100 shadow-sm group"
                 >
-                  Explore Crockery Collection <ArrowRight className="w-4 h-4" />
+                  <Image
+                    src={heroImageUrl}
+                    alt="Almoin Crockery Fine Tableware"
+                    fill
+                    className="object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
                 </Link>
-                <Link
-                  href="/shop?category=dinner-sets"
-                  className="px-6 py-3.5 rounded-lg bg-stone-800/90 hover:bg-stone-800 text-stone-200 border border-stone-700 font-medium text-sm transition"
-                >
-                  Dinner Sets (12 & 24 Pieces)
-                </Link>
-              </div>
-
-              {/* Trust Micro-Badges */}
-              <div className="mt-10 pt-6 border-t border-stone-800 flex flex-wrap gap-6 text-xs text-stone-400">
-                <span className="flex items-center gap-1.5 text-stone-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Cash on Delivery Available
-                </span>
-                <span className="flex items-center gap-1.5 text-stone-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Double-Boxed Fragile Packing
-                </span>
-                <span className="flex items-center gap-1.5 text-stone-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Free Delivery Over Rs. 5,000
-                </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Categories Grid */}
-        <section className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-xs uppercase tracking-[0.25em] text-amber-700 dark:text-amber-400 font-semibold mb-2">
-              Curated Homeware
+        {/* 2. Minimal Category Grid */}
+        <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-baseline justify-between mb-8">
+            <h2 className="font-serif text-2xl sm:text-3xl font-medium text-stone-900">
+              Shop by Category
             </h2>
-            <h3 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100">
-              Explore by Category
-            </h3>
-            <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
-              Each piece is high-fired for heat tolerance, daily durability, and aesthetic elegance.
-            </p>
+            <Link
+              href="/shop"
+              className="text-xs font-medium text-stone-500 hover:text-stone-900 transition"
+            >
+              View all →
+            </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/shop?category=${cat.slug}`}
-                className="group relative rounded-xl overflow-hidden aspect-square bg-stone-200 dark:bg-stone-800 border border-stone-200 dark:border-stone-800 flex flex-col justify-end p-4 hover:shadow-md transition"
+                className="group flex flex-col items-center text-center"
               >
-                <Image
-                  src={cat.image_url || "/placeholder.jpg"}
-                  alt={cat.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 50vw, 16vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-950/30 to-transparent" />
-                <div className="relative z-10 text-center">
-                  <h4 className="font-serif font-bold text-white text-sm sm:text-base group-hover:text-amber-300 transition-colors">
-                    {cat.name}
-                  </h4>
-                  <span className="text-[11px] text-stone-300">Shop Range →</span>
+                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-stone-100 mb-2.5 border border-stone-200/60">
+                  <Image
+                    src={cat.image_url || "/logo-card.jpg"}
+                    alt={cat.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    sizes="(max-width: 640px) 50vw, 16vw"
+                  />
                 </div>
+                <span className="text-sm font-medium text-stone-800 group-hover:text-amber-800 transition-colors">
+                  {cat.name}
+                </span>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* Featured Best Sellers */}
-        <section className="py-16 bg-stone-100/60 dark:bg-stone-900/40 border-y border-stone-200 dark:border-stone-800">
+        {/* 3. Bestsellers */}
+        <section className="py-16 bg-[#f7f3eb]/60 border-y border-stone-200/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-              <div>
-                <span className="text-xs uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400 font-semibold block mb-1">
-                  Customer Favorites
-                </span>
-                <h3 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100">
-                  Best Selling Tableware
-                </h3>
-              </div>
+            <div className="flex items-baseline justify-between mb-8">
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium text-stone-900">
+                Featured Pieces
+              </h2>
               <Link
                 href="/shop"
-                className="text-sm font-semibold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
+                className="text-xs font-medium text-stone-600 hover:text-stone-900 transition"
               >
-                View Complete Catalog <ArrowRight className="w-4 h-4" />
+                Explore catalog →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.slice(0, 4).map((product) => (
+            {featuredProducts.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-stone-200/80 p-8 sm:p-10 text-center max-w-lg mx-auto">
+                <p className="font-serif text-xl text-stone-900 mb-2">
+                  New collections are arriving soon
+                </p>
+                <p className="text-xs text-stone-500 mb-5 leading-relaxed">
+                  We are curating fresh bone china dinner sets and artisan stoneware. Contact us on WhatsApp for custom sets or advance inquiries.
+                </p>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 hover:bg-amber-800 text-white text-xs font-medium transition"
+                >
+                  Contact Us <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                {featuredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 4. Compact 3-Pillar Promise Strip (Clean & Concise) */}
+        <section className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-stone-200/60">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex items-start gap-3.5">
+              <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-sm text-stone-900">
+                  100% Breakage Guarantee
+                </h3>
+                <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                  Free replacement if any piece arrives chipped—just share an unboxing clip.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3.5">
+              <Truck className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-sm text-stone-900">
+                  Nationwide Cash on Delivery
+                </h3>
+                <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                  7-ply cushioned crates shipped across Pakistan. Free over{" "}
+                  {formatPKR(storeSettings.free_shipping_threshold_pkr)}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3.5">
+              <Sparkles className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-sm text-stone-900">
+                  Food-Safe &amp; Lead-Free
+                </h3>
+                <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                  High-fired bone china and stoneware built for everyday dining.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. New Arrivals */}
+        {newArrivals.length > 0 && (
+          <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-baseline justify-between mb-8">
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium text-stone-900">
+                New Arrivals
+              </h2>
+              <Link
+                href="/shop?sort=newest"
+                className="text-xs font-medium text-stone-500 hover:text-stone-900 transition"
+              >
+                See all →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              {newArrivals.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* Fragile Transit Guarantee Banner */}
-        <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-gradient-to-br from-stone-900 via-stone-850 to-amber-950 text-stone-100 p-8 sm:p-12 border border-amber-900/40 shadow-xl relative overflow-hidden">
-            <div className="max-w-3xl relative z-10">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400 mb-4 bg-amber-950/60 px-3 py-1 rounded-full border border-amber-800/60">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                Transit Safety Guarantee
-              </div>
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold mb-4 text-stone-50">
-                Concerned About Breakage During Courier Delivery?
-              </h3>
-              <p className="text-sm sm:text-base text-stone-300 leading-relaxed mb-6">
-                We understand ceramics are precious. Every item is packed in <strong>custom multi-layered bubble wrap, styrofoam corner molds, and heavy-duty double-wall corrugated cartons</strong>. If any piece arrives cracked or broken, simply record a 30-second unboxing video and WhatsApp it to us. We will ship a brand-new replacement piece immediately with zero hassle.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/breakage-policy"
-                  className="px-5 py-2.5 rounded-lg bg-stone-100 text-stone-900 text-xs font-bold hover:bg-white transition"
-                >
-                  Read Our Breakage Policy
-                </Link>
-                <a
-                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-                    "Hi! I have a question about how your crockery is packed and shipped."
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-5 py-2.5 rounded-lg bg-emerald-700 text-white text-xs font-bold hover:bg-emerald-600 transition inline-flex items-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" /> Ask Packaging Questions on WhatsApp
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* New Arrivals */}
-        <section className="py-12 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
-                New Arrivals
-              </h3>
-              <p className="text-xs text-stone-500 mt-1">
-                Handpicked recent studio releases and seasonal dinner sets.
-              </p>
-            </div>
-            <Link
-              href="/shop?sort=newest"
-              className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:underline"
-            >
-              See All New →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
-      {/* Floating WhatsApp Action Button */}
+      {/* Clean Icon-Only WhatsApp Button */}
       <a
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-          "Hi Khaak & Khazaf, I am browsing your crockery website and need assistance."
+          "Assalam-o-Alaikum Almoin Crockery, I need help choosing tableware."
         )}`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Contact on WhatsApp"
-        className="fixed bottom-6 right-6 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-105"
+        aria-label="Chat on WhatsApp"
+        title="Chat on WhatsApp"
+        className="fixed bottom-5 right-5 z-40 w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md flex items-center justify-center transition-transform hover:scale-105"
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-5 h-5" />
       </a>
 
       <Footer />

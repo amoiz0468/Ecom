@@ -1,4 +1,4 @@
-# Khaak & Khazaf (خاک و خزف) — Luxury Crockery & Tableware E-Commerce (Pakistan)
+# Almoin Crockery (المُعِين) — Luxury Crockery & Tableware E-Commerce (Pakistan)
 
 A production-ready e-commerce platform built specifically for online crockery, dinnerware, and fine ceramics businesses operating in Pakistan.
 

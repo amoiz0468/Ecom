@@ -1,98 +1,83 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.never-dark, .never-dark *));
+
+@theme inline {
+  --font-serif: var(--font-serif), Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 24 10% 12%;
+    --background: 40 38% 98%;
+    --foreground: 28 20% 14%;
 
-    --card: 40 25% 99%;
-    --card-foreground: 24 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 28 20% 14%;
 
-    --popover: 40 25% 99%;
-    --popover-foreground: 24 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 28 20% 14%;
 
-    --primary: 24 65% 32%;
-    --primary-foreground: 40 30% 98%;
+    --primary: 30 62% 34%;
+    --primary-foreground: 40 40% 99%;
 
-    --secondary: 35 20% 92%;
-    --secondary-foreground: 24 20% 20%;
+    --secondary: 38 30% 94%;
+    --secondary-foreground: 28 22% 18%;
 
-    --muted: 36 15% 94%;
-    --muted-foreground: 25 10% 45%;
+    --muted: 38 25% 95%;
+    --muted-foreground: 28 12% 44%;
 
-    --accent: 28 45% 90%;
-    --accent-foreground: 24 60% 25%;
+    --accent: 36 50% 92%;
+    --accent-foreground: 28 60% 24%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 35 15% 88%;
-    --input: 35 15% 88%;
-    --ring: 24 65% 32%;
+    --border: 36 22% 88%;
+    --input: 36 22% 88%;
+    --ring: 30 62% 34%;
 
-    --radius: 0.625rem;
-  }
-
-  .dark {
-    --background: 24 10% 10%;
-    --foreground: 40 20% 96%;
-
-    --card: 24 10% 13%;
-    --card-foreground: 40 20% 96%;
-
-    --popover: 24 10% 13%;
-    --popover-foreground: 40 20% 96%;
-
-    --primary: 28 60% 55%;
-    --primary-foreground: 24 10% 10%;
-
-    --secondary: 24 10% 18%;
-    --secondary-foreground: 40 20% 90%;
-
-    --muted: 24 10% 18%;
-    --muted-foreground: 35 10% 65%;
-
-    --accent: 24 25% 22%;
-    --accent-foreground: 40 30% 95%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 24 10% 20%;
-    --input: 24 10% 20%;
-    --ring: 28 60% 55%;
+    --radius: 0.75rem;
+    color-scheme: light;
   }
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: #fdfbf7;
+  color: #292524;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Elegant luxury styling */
+/* Light Porcelain & Champagne Editorial Texture */
+.bg-kiln-mesh {
+  background-color: #fdfbf7;
+  background-image:
+    radial-gradient(at 12% 10%, rgba(251, 191, 36, 0.08) 0px, transparent 50%),
+    radial-gradient(at 88% 85%, rgba(217, 119, 6, 0.06) 0px, transparent 55%),
+    radial-gradient(at 50% 45%, rgba(255, 255, 255, 0.9) 0px, transparent 70%);
+}
+
 .glass-panel {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(220, 215, 205, 0.5);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(231, 224, 214, 0.8);
 }
 
-.dark .glass-panel {
-  background: rgba(24, 23, 22, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(60, 56, 54, 0.5);
+/* Subtle champagne gold accent line */
+.gold-divider {
+  background: linear-gradient(90deg, transparent 0%, rgba(217, 119, 6, 0.35) 50%, transparent 100%);
+  height: 1px;
 }
 
-/* Subtle gold shimmer for premium crockery badges */
 @keyframes gold-shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .gold-shimmer {
-  background: linear-gradient(90deg, #d97706 0%, #fde68a 50%, #d97706 100%);
+  background: linear-gradient(90deg, #b45309 0%, #fde68a 50%, #b45309 100%);
   background-size: 200% 100%;
-  animation: gold-shimmer 3.5s infinite linear;
+  animation: gold-shimmer 4s infinite linear;
 }

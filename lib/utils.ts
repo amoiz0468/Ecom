@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { ShippingZone } from "@/types";
+import { DEFAULT_SHIPPING_ZONES } from "@/lib/data/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,11 +16,49 @@ export function formatPKR(amount: number): string {
 }
 
 /**
+ * Calculate shipping fee in PKR based on Pakistani city zone, parcel weight (grams), and subtotal.
+ * Accepts optional live shipping zones and free-shipping threshold from the SQLite database.
+ */
+export function calculateShippingFee(
+  city: string,
+  totalWeightGrams: number,
+  subtotal: number,
+  zones: ShippingZone[] = DEFAULT_SHIPPING_ZONES,
+  freeShippingThresholdPkr?: number
+): number {
+  const activeZones = zones.length > 0 ? zones : DEFAULT_SHIPPING_ZONES;
+  const zone =
+    activeZones.find((z) => z.cities.includes(city)) ||
+    activeZones.find((z) => z.id === "zone-rest") ||
+    activeZones[0];
+
+  const threshold =
+    freeShippingThresholdPkr ?? zone.free_shipping_threshold_pkr ?? 5000;
+
+  if (subtotal >= threshold) {
+    return 0;
+  }
+
+  const baseRate = zone.base_rate_pkr;
+  const extraWeightKg = Math.max(
+    0,
+    Math.ceil((totalWeightGrams - zone.base_weight_grams) / 1000)
+  );
+  const extraCharge = extraWeightKg * zone.per_kg_extra_pkr;
+
+  return baseRate + extraCharge;
+}
+
+/**
  * Validates and normalizes Pakistani phone numbers:
  * Accepts: 03001234567, 0300-1234567, +923001234567, 923001234567
  * Returns formatted: +923001234567
  */
-export function normalizePakistaniPhone(phone: string): { isValid: boolean; normalized: string; display: string } {
+export function normalizePakistaniPhone(phone: string): {
+  isValid: boolean;
+  normalized: string;
+  display: string;
+} {
   const digits = phone.replace(/\D/g, "");
   let standard = "";
 
@@ -31,7 +71,6 @@ export function normalizePakistaniPhone(phone: string): { isValid: boolean; norm
   }
 
   if (standard.length === 13 && /^\+923\d{9}$/.test(standard)) {
-    // Format for display: 0300-1234567
     const local = "0" + standard.slice(3);
     const display = `${local.slice(0, 4)}-${local.slice(4)}`;
     return { isValid: true, normalized: standard, display };

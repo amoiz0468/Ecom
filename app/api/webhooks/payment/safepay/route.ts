@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Update order status to confirmed and payment to paid
-    await updateOrderStatus(orderId, "confirmed", "paid");
+    await updateOrderStatus(orderId, "confirmed", "paid", undefined, undefined, {
+      internalWebhook: true,
+    });
 
     return NextResponse.json({ success: true, message: "Payment verified successfully" });
   } catch (err: any) {

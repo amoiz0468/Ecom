@@ -4,7 +4,7 @@ import Link from "next/link";
 import { HelpCircle } from "lucide-react";
 
 export const metadata = {
-  title: "Frequently Asked Questions (FAQ) | Khaak & Khazaf Crockery",
+  title: "Frequently Asked Questions (FAQ) | Almoin Crockery",
   description: "Find answers regarding Cash on Delivery, fragile packaging, and dinnerware orders in Pakistan.",
 };
 

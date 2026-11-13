@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/lib/store/cart";
@@ -22,13 +23,25 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, getSubtotal, getTotalWeightGrams } =
     useCartStore();
 
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(5000);
+
+  useEffect(() => {
+    fetch("/api/store-config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.settings?.free_shipping_threshold_pkr) {
+          setFreeShippingThreshold(data.settings.free_shipping_threshold_pkr);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const subtotal = getSubtotal();
   const totalWeight = getTotalWeightGrams();
-  const freeShippingThreshold = 5000;
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100">
+    <div className="min-h-screen flex flex-col bg-[#fdfbf7] text-stone-900">
       <Navbar />
       <CartDrawer />
 
@@ -39,8 +52,8 @@ export default function CartPage() {
         </p>
 
         {items.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-8 max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400 mx-auto mb-4">
+          <div className="text-center py-20 bg-white rounded-2xl border border-stone-200 p-8 max-w-xl mx-auto">
+            <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 mx-auto mb-4">
               <ShoppingBag className="w-8 h-8" />
             </div>
             <h2 className="font-serif text-xl font-bold mb-2">Your basket is currently empty</h2>
@@ -49,7 +62,7 @@ export default function CartPage() {
             </p>
             <Link
               href="/shop"
-              className="px-6 py-3 rounded-lg bg-stone-900 dark:bg-amber-700 text-white font-medium text-xs hover:opacity-90 transition"
+              className="px-6 py-3 rounded-lg bg-stone-900 text-white font-medium text-xs hover:opacity-90 transition"
             >
               Continue Shopping
             </Link>
@@ -63,7 +76,7 @@ export default function CartPage() {
                   <div key={item.variant_id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-center">
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-stone-100 shrink-0 border border-stone-200 dark:border-stone-800">
                       <Image
-                        src={item.product.images[0]?.image_url || "/placeholder.jpg"}
+                        src={item.product.images[0]?.image_url || "/logo-card.jpg"}
                         alt={item.product.name}
                         fill
                         className="object-cover"
@@ -179,7 +192,7 @@ export default function CartPage() {
 
                 <Link
                   href="/checkout"
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-stone-900 dark:bg-amber-700 text-white font-semibold rounded-lg hover:opacity-95 transition text-sm shadow-sm"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-amber-700 text-white font-semibold rounded-full hover:bg-amber-800 transition text-sm shadow-sm"
                 >
                   Proceed to Checkout <ArrowRight className="w-4 h-4" />
                 </Link>
