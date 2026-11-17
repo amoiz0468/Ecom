@@ -7,7 +7,7 @@ export class SafepayProvider implements PaymentProvider {
   name = "Debit / Credit Card & Wallets (Safepay Pakistan)";
   description = "Pay securely using Pakistani Visa, Mastercard, PayPak, or UnionPay.";
 
-  private apiKey = process.env.SAFEPAY_API_KEY || "sec_sand_dummy_key";
+  private apiKey = process.env.SAFEPAY_API_KEY || "";
   private secretKey = process.env.SAFEPAY_SECRET_KEY || "sand_dummy_secret";
   private baseUrl = process.env.NEXT_PUBLIC_SAFEPAY_URL || "https://sandbox.api.getsafepay.com";
 

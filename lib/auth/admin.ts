@@ -12,20 +12,26 @@ export interface AdminSessionPayload {
 }
 
 function getSecretKey(): string {
-  return (
-    process.env.ADMIN_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "almoin-crockery-hmac-secret-2026"
-  );
+  const secret =
+    process.env.ADMIN_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_SESSION_SECRET must be configured in production.");
+  }
+  return "dev-only-local-session-secret";
 }
 
 export function getExpectedAdminCredentials(): {
   username: string;
   password: string;
 } {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password && process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_PASSWORD must be configured in production.");
+  }
   return {
     username: process.env.ADMIN_USERNAME || "admin",
-    password: process.env.ADMIN_PASSWORD || "AlmoinAdmin2026!",
+    password: password || "dev-local-password",
   };
 }
 
