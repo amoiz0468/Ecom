@@ -123,20 +123,20 @@ assert(
 // 7. Cloudinary Signed Upload Signing & SQLite Image URL Persistence
 console.log("\n7. Testing Cloudinary Signing & SQLite Image URL Persistence...");
 const parsedCloud = parseCloudinaryUrl(
-  "CLOUDINARY_URL=cloudinary://787258271148211:sampleSecretKey@j9l4ri5l"
+  "CLOUDINARY_URL=cloudinary://123456789012345:sampleSecretKey@demo_cloud"
 );
 assert(
   Boolean(
     parsedCloud &&
-      parsedCloud.cloudName === "j9l4ri5l" &&
-      parsedCloud.apiKey === "787258271148211" &&
+      parsedCloud.cloudName === "demo_cloud" &&
+      parsedCloud.apiKey === "123456789012345" &&
       parsedCloud.apiSecret === "sampleSecretKey"
   ),
   "Parses CLOUDINARY_URL connection string accurately"
 );
 
 const maskedCloud = parseCloudinaryUrl(
-  "CLOUDINARY_URL=cloudinary://787258271148211:**********@j9l4ri5l"
+  "CLOUDINARY_URL=cloudinary://123456789012345:**********@demo_cloud"
 );
 assert(
   maskedCloud === null,
@@ -153,7 +153,7 @@ assert(
 );
 
 const optimizedSample = injectCloudinaryAutoOptimize(
-  "https://res.cloudinary.com/j9l4ri5l/image/upload/v1730000000/khaak-khazaf-products/vase.jpg"
+  "https://res.cloudinary.com/demo_cloud/image/upload/v1730000000/khaak-khazaf-products/vase.jpg"
 );
 assert(
   optimizedSample.includes("/image/upload/f_auto,q_auto/"),
