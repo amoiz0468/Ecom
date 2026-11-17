@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import { Order } from "@/types";
 import { formatPKR } from "@/lib/utils";
-import { appendAuditLog } from "@/lib/db/sqlite";
+import { appendAuditLog } from "@/lib/db/audit";
 
 function isResendConfigured(): boolean {
   const key = process.env.RESEND_API_KEY;
@@ -59,7 +59,7 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
   `;
 
   if (!isResendConfigured()) {
-    appendAuditLog({
+    await appendAuditLog({
       actor: "notification-service",
       action: "EMAIL_SIMULATED",
       entity_type: "order",
@@ -78,7 +78,7 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
       html,
     });
 
-    appendAuditLog({
+    await appendAuditLog({
       actor: "notification-service",
       action: "EMAIL_SENT",
       entity_type: "order",

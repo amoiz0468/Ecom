@@ -3,9 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { Home, PackageSearch, ShieldCheck, Info, Phone } from "lucide-react";
 import { DEFAULT_CATEGORIES } from "@/lib/data/constants";
 
+const MOBILE_FOOTER_NAV = [
+  { label: "Home", href: "/", icon: Home, title: "Home" },
+  { label: "Track Order", href: "/track", icon: PackageSearch, title: "Track Order" },
+  { label: "Guarantee", href: "/breakage-policy", icon: ShieldCheck, title: "Breakage Guarantee" },
+  { label: "About", href: "/about", icon: Info, title: "About" },
+  { label: "Contact", href: "/contact", icon: Phone, title: "Contact" },
+];
+
 export function Footer() {
+  const pathname = usePathname();
   const [categories, setCategories] = useState(
     DEFAULT_CATEGORIES.map((c) => ({ id: c.id, name: c.name, slug: c.slug }))
   );
@@ -134,9 +145,41 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-stone-200/70 py-5 px-4 text-center text-[11px] text-stone-500">
+      <div className="border-t border-stone-200/70 pt-5 pb-22 lg:pb-5 px-4 text-center text-[11px] text-stone-500">
         © {new Date().getFullYear()} Almoin Crockery. All rights reserved.
       </div>
+
+      {/* Mobile Footer Navigation Bar */}
+      <nav
+        aria-label="Mobile footer navigation"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#fdfbf7]/95 backdrop-blur-md border-t border-stone-200/80 shadow-[0_-4px_16px_rgba(28,25,23,0.06)] pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="grid grid-cols-5 items-stretch">
+          {MOBILE_FOOTER_NAV.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.title}
+                className={`flex flex-col items-center justify-center gap-1 py-2.5 px-1 text-[10px] leading-tight transition ${
+                  isActive
+                    ? "text-amber-800 font-semibold"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate max-w-full">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </footer>
   );
 }

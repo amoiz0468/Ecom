@@ -1,16 +1,13 @@
-import { formatPKR, normalizePakistaniPhone } from "../lib/utils";
-import { calculateShippingFee } from "../lib/orders";
+import {
+  formatPKR,
+  normalizePakistaniPhone,
+  calculateShippingFee,
+} from "../lib/utils";
 import { CashOnDeliveryProvider } from "../lib/payments/cod";
 import {
-  getSqliteDb,
   hashPasswordScrypt,
   verifyPasswordScrypt,
-} from "../lib/db/sqlite";
-import {
-  CatalogRepository,
-  DiscountRepository,
-  AnalyticsRepository,
-} from "../lib/db/repositories";
+} from "../lib/auth/password";
 import { checkRateLimit } from "../lib/security/rate-limit";
 import { SaveProductInputSchema } from "../lib/validators";
 import {
@@ -93,100 +90,8 @@ assert(
   "COD blocked above Rs. 35,000 for high-value protection"
 );
 
-// 5. SQLite Relational Database Engine & Repositories
-console.log("\n5. Testing SQLite Relational Engine (node:sqlite WAL Mode)...");
-const db = getSqliteDb();
-const walCheck = db.prepare("PRAGMA journal_mode;").get() as {
-  journal_mode: string;
-};
-assert(
-  walCheck.journal_mode.toLowerCase() === "wal",
-  "SQLite running in high-concurrency WAL mode"
-);
-
-const allCategories = CatalogRepository.getAllCategories();
-assert(
-  allCategories.length >= 5,
-  `CatalogRepository loaded ${allCategories.length} categories from SQLite`
-);
-
-// Test real Product & Discount CRUD lifecycle in SQLite without leaving mock data behind
-const tempProduct = CatalogRepository.upsertProduct({
-  id: "test-temp-prod",
-  name: "Test Bone China Plate",
-  slug: "test-bone-china-plate",
-  description: "Test product",
-  category_id: allCategories[0].id,
-  material: "Bone China",
-  care_instructions: {
-    dishwasher_safe: true,
-    microwave_safe: true,
-    oven_safe: false,
-    handwash_only: false,
-  },
-  is_fragile: true,
-  breakage_guarantee: "100% Free Replacement Guarantee",
-  is_featured: false,
-  is_published: true,
-  images: [
-    {
-      id: "test-img-1",
-      product_id: "test-temp-prod",
-      image_url: "/logo-card.jpg",
-      alt_text: "Test Plate",
-      is_primary: true,
-      display_order: 1,
-    },
-  ],
-  variants: [
-    {
-      id: "test-var-1",
-      product_id: "test-temp-prod",
-      sku: "TEST-SKU-001",
-      title: "Single Plate",
-      piece_count: 1,
-      price: 1500,
-      stock: 10,
-      weight_grams: 500,
-      dimensions: { length_cm: 25, width_cm: 25, height_cm: 4 },
-      attributes: {},
-      is_active: true,
-    },
-  ],
-});
-assert(
-  tempProduct.id === "test-temp-prod",
-  "CatalogRepository persists and loads product in SQLite"
-);
-CatalogRepository.deleteProduct("test-temp-prod");
-
-DiscountRepository.upsert({
-  id: "test-temp-disc",
-  code: "TEST10",
-  description: "Temporary test coupon",
-  discount_type: "percentage",
-  discount_value: 10,
-  min_order_amount_pkr: 1000,
-  times_used: 0,
-  is_active: true,
-});
-const foundCoupon = DiscountRepository.findByCode("TEST10");
-assert(
-  Boolean(foundCoupon && foundCoupon.discount_value === 10),
-  "DiscountRepository saves and queries promo code in SQLite"
-);
-DiscountRepository.delete("test-temp-disc");
-
-const analytics = AnalyticsRepository.getDashboardMetrics();
-assert(
-  typeof analytics.inventorySummary.total_products === "number" &&
-    Array.isArray(analytics.recentAuditLogs) &&
-    Array.isArray(analytics.customerInquiries),
-  "AnalyticsRepository SQL aggregations, inquiries, and audit_logs verified"
-);
-
-// 6. Security: Scrypt Password Hashing, Zod Schemas & Rate Limiter
-console.log("\n6. Testing Scrypt Hashing, Zod Validation & Rate Limiter...");
+// 5. Security: Scrypt Password Hashing, Zod Schemas & Rate Limiter
+console.log("\n5. Testing Scrypt Hashing, Zod Validation & Rate Limiter...");
 const hash = hashPasswordScrypt("KhaakAdmin2026!");
 assert(
   verifyPasswordScrypt("KhaakAdmin2026!", hash) === true,

@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingOrder = OrderRepository.getOrderByIdOrNumber(orderId.trim());
+    const existingOrder = await OrderRepository.getOrderByIdOrNumber(orderId.trim());
     if (!existingOrder) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
@@ -104,6 +104,11 @@ export async function POST(req: NextRequest) {
         folder: "almoin-crockery-payment-proofs",
       });
       proofUrl = uploaded.url;
+    } else if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Image storage is not configured on the server." },
+        { status: 500 }
+      );
     } else {
       const proofsDir = path.join(process.cwd(), "public", "uploads", "proofs");
       if (!fs.existsSync(proofsDir)) {
@@ -116,7 +121,7 @@ export async function POST(req: NextRequest) {
       proofUrl = `/uploads/proofs/${fileName}`;
     }
 
-    const updatedOrder = OrderRepository.attachPaymentProof(
+    const updatedOrder = await OrderRepository.attachPaymentProof(
       existingOrder.id,
       proofUrl
     );

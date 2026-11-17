@@ -16,8 +16,8 @@ export async function GET(
   const isAdmin = session?.role === "admin";
 
   const product =
-    CatalogRepository.getProductById(id) ||
-    CatalogRepository.getProductBySlug(id, isAdmin);
+    (await CatalogRepository.getProductById(id)) ||
+    (await CatalogRepository.getProductBySlug(id, isAdmin));
 
   if (!product || (!isAdmin && !product.is_published)) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const inquiry = InquiryRepository.create({
+    const inquiry = await InquiryRepository.create({
       name,
       phone,
       email: email || undefined,
@@ -56,12 +56,12 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
     if (typeof body?.id === "string") {
-      InquiryRepository.markResolved(body.id, session.username);
+      await InquiryRepository.markResolved(body.id, session.username);
     }
 
     return NextResponse.json({
       success: true,
-      inquiries: InquiryRepository.getAll(),
+      inquiries: await InquiryRepository.getAll(),
     });
   } catch (err: any) {
     return NextResponse.json(

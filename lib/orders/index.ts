@@ -1,5 +1,7 @@
 "use server";
 
+import crypto from "node:crypto";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   Order,
@@ -8,8 +10,6 @@ import {
   PaymentProviderId,
   CartItem,
   CourierCode,
-  Product,
-  ProductVariant,
 } from "@/types";
 import { normalizePakistaniPhone, calculateShippingFee } from "@/lib/utils";
 import {
@@ -19,27 +19,12 @@ import {
   SettingsRepository,
 } from "@/lib/db/repositories";
 import { getPaymentProvider } from "@/lib/payments";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminAuth } from "@/lib/auth/admin";
 import { PlaceOrderInputSchema } from "@/lib/validators";
 import { sendOrderConfirmationEmail } from "@/lib/notifications/email";
-
-export { calculateShippingFee };
-
-function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return Boolean(
-    url &&
-      key &&
-      !url.includes("your-project") &&
-      !url.includes("placeholder") &&
-      !key.includes("...") &&
-      !key.includes("placeholder")
-  );
-}
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { phoneMatchesOrder } from "@/lib/orders/verify";
+import { applyOrderStatusUpdate } from "@/lib/orders/internal";
 
 export interface PlaceOrderInput {
   guestInfo: {
@@ -60,6 +45,13 @@ export interface PlaceOrderInput {
   notes?: string;
   items: CartItem[];
   discountCode?: string;
+}
+
+function generateOrderNumber(attempt: number): string {
+  // 5 digits normally; widen the range if we keep colliding.
+  return attempt < 3
+    ? `PK-CROCK-${crypto.randomInt(10000, 100000)}`
+    : `PK-CROCK-${crypto.randomInt(100000, 1000000)}`;
 }
 
 export async function placeOrder(input: PlaceOrderInput): Promise<{
@@ -90,30 +82,19 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
       };
     }
 
-    // 3. Server-side price, weight, and stock verification against published SQLite catalog
-    const catalogProducts = CatalogRepository.getAllProducts({
-      includeUnpublished: false,
-    });
-    const variantLookup = new Map<
-      string,
-      {
-        product: Product;
-        variant: ProductVariant;
-      }
-    >();
+    // 3. Server-side price, weight and stock verification (only the variants
+    //    in this basket are loaded, never the whole catalog)
+    const variantLookup = await CatalogRepository.getCheckoutVariants(
+      input.items.map((item) => item.variant_id)
+    );
 
-    for (const p of catalogProducts) {
-      for (const v of p.variants) {
-        if (v.is_active !== false) {
-          variantLookup.set(v.id, { product: p, variant: v });
-        }
-      }
-    }
+    // Unguessable id: the success page URL (/checkout/success/<id>) is the
+    // customer's capability link to their own order details.
+    const orderId = `ord_${crypto.randomUUID().replace(/-/g, "")}`;
 
     let subtotal = 0;
     let totalWeight = 0;
     const verifiedItems: Order["items"] = [];
-    const orderId = `ord_${Date.now()}`;
 
     for (const item of input.items) {
       const authoritative = variantLookup.get(item.variant_id);
@@ -142,7 +123,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
       totalWeight += unitWeight * qty;
 
       verifiedItems.push({
-        id: `oi_${Date.now()}_${variant.id}`,
+        id: `oi_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`,
         order_id: orderId,
         variant_id: variant.id,
         product_title: product.name,
@@ -155,8 +136,10 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
       });
     }
 
-    const storeSettings = SettingsRepository.getStoreSettings();
-    const shippingZones = SettingsRepository.getShippingZones();
+    const [storeSettings, shippingZones] = await Promise.all([
+      SettingsRepository.getStoreSettings(),
+      SettingsRepository.getShippingZones(),
+    ]);
 
     const shippingFee = calculateShippingFee(
       input.shippingAddress.city,
@@ -176,7 +159,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
 
     if (input.discountCode?.trim()) {
       const codeUpper = input.discountCode.trim().toUpperCase();
-      const matchedCoupon = DiscountRepository.findByCode(codeUpper);
+      const matchedCoupon = await DiscountRepository.findByCode(codeUpper);
 
       if (
         matchedCoupon &&
@@ -216,13 +199,13 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
     }
 
     // 5. Construct Order Object
-    const orderNumber = `PK-CROCK-${Math.floor(10000 + Math.random() * 90000)}`;
     const initialPaymentStatus: PaymentStatus =
       input.paymentMethod === "manual_transfer"
         ? "awaiting_verification"
         : "unpaid";
 
-    const order: Order = {
+    const nowIso = new Date().toISOString();
+    const buildOrder = (orderNumber: string): Order => ({
       id: orderId,
       order_number: orderNumber,
       guest_info: {
@@ -248,64 +231,41 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
       notes: input.notes,
       courier_code: "tcs",
       items: verifiedItems,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+      created_at: nowIso,
+      updated_at: nowIso,
+    });
 
-    // 6. Execute atomic SQLite ACID transaction (deduct stock + increment coupon + insert order + audit log)
-    OrderRepository.createOrderTransaction(order, appliedCouponCode);
-
-    // 7. Also replicate to Supabase PostgreSQL if configured
-    if (isSupabaseConfigured()) {
+    // 6. Atomic Postgres transaction (stock check + deduct + coupon + order +
+    //    items). Retry with a fresh order number on a rare number collision.
+    let order: Order | null = null;
+    for (let attempt = 0; attempt < 5 && !order; attempt++) {
+      const candidate = buildOrder(generateOrderNumber(attempt));
       try {
-        const supabase = createAdminClient();
-        const { data: dbOrder, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            order_number: order.order_number,
-            guest_info: order.guest_info,
-            status: order.status,
-            payment_status: order.payment_status,
-            shipping_address: order.shipping_address,
-            subtotal_pkr: order.subtotal_pkr,
-            discount_pkr: order.discount_pkr,
-            shipping_fee_pkr: order.shipping_fee_pkr,
-            cod_fee_pkr: order.cod_fee_pkr,
-            fragile_packaging_fee_pkr: order.fragile_packaging_fee_pkr,
-            total_pkr: order.total_pkr,
-            notes: order.notes,
-            courier_code: order.courier_code,
-          })
-          .select()
-          .single();
-
-        if (!orderError && dbOrder) {
-          order.id = dbOrder.id;
-          await supabase.from("order_items").insert(
-            order.items.map((i) => ({
-              order_id: dbOrder.id,
-              variant_id: i.variant_id,
-              product_title: i.product_title,
-              variant_title: i.variant_title,
-              sku: i.sku,
-              price_pkr: i.price_pkr,
-              quantity: i.quantity,
-              total_pkr: i.total_pkr,
-            }))
-          );
-          await supabase.rpc("reserve_order_stock", {
-            p_order_id: dbOrder.id,
-          });
-        }
-      } catch {
-        // Primary SQLite transaction already succeeded
+        order = await OrderRepository.createOrderTransaction(
+          candidate,
+          appliedCouponCode
+        );
+      } catch (err) {
+        const code = (err as { code?: string }).code;
+        if (code === "23505" && attempt < 4) continue;
+        throw err;
       }
     }
+    if (!order) {
+      return {
+        success: false,
+        error: "Could not generate an order number. Please try again.",
+      };
+    }
 
-    // 8. Dispatch transactional email confirmation
-    await sendOrderConfirmationEmail(order);
+    // 7. Dispatch transactional email confirmation (never fails the order)
+    try {
+      await sendOrderConfirmationEmail(order);
+    } catch {
+      // ignore email errors
+    }
 
-    // 9. Initiate Payment via Provider
+    // 8. Initiate Payment via Provider
     const paymentResult = await provider.initiatePayment(order);
 
     revalidatePath("/admin");
@@ -318,10 +278,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{
       redirectUrl:
         paymentResult.redirectUrl || `/checkout/success/${order.id}`,
     };
-  } catch (err: any) {
+  } catch (err) {
     return {
       success: false,
-      error: err.message || "Failed to process order. Please try again.",
+      error:
+        (err instanceof Error && err.message) ||
+        "Failed to process order. Please try again.",
     };
   }
 }
@@ -344,7 +306,7 @@ export async function validateCouponAction(
     };
   }
 
-  const matched = DiscountRepository.findByCode(clean);
+  const matched = await DiscountRepository.findByCode(clean);
   if (!matched || !matched.is_active) {
     return {
       valid: false,
@@ -353,10 +315,7 @@ export async function validateCouponAction(
     };
   }
 
-  if (
-    matched.usage_limit &&
-    matched.times_used >= matched.usage_limit
-  ) {
+  if (matched.usage_limit && matched.times_used >= matched.usage_limit) {
     return {
       valid: false,
       discountPkr: 0,
@@ -385,59 +344,51 @@ export async function validateCouponAction(
   };
 }
 
-export async function getOrderById(idOrNumber: string): Promise<Order | null> {
-  const found = OrderRepository.getOrderByIdOrNumber(idOrNumber);
-  if (found) return found;
-
-  if (isSupabaseConfigured()) {
-    try {
-      const clean = idOrNumber.trim();
-      const supabase = createAdminClient();
-      const { data } = await supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .or(`id.eq.${clean},order_number.ilike.${clean}`)
-        .maybeSingle();
-
-      if (data) {
-        return data as unknown as Order;
-      }
-    } catch {
-      // ignore
-    }
+/**
+ * Public order tracking. Requires BOTH the order reference and the phone
+ * number used at checkout, so an order number alone never exposes a
+ * customer's name, phone or address.
+ */
+export async function trackOrderAction(
+  reference: string,
+  phone: string
+): Promise<{ order: Order | null; error?: string }> {
+  const requestHeaders = await headers();
+  const ip =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rate = checkRateLimit(`order-track:${ip}`, 20, 60 * 1000);
+  if (!rate.allowed) {
+    return {
+      order: null,
+      error: `Too many attempts. Please wait ${rate.retryAfterSeconds}s and try again.`,
+    };
   }
 
-  return null;
+  const ref = reference.trim();
+  if (!ref || !phone.trim()) {
+    return {
+      order: null,
+      error: "Please enter both your order reference and phone number.",
+    };
+  }
+
+  const order = await OrderRepository.getOrderByIdOrNumber(ref);
+  // Same response for "not found" and "wrong phone" so references can't be probed.
+  if (!order || !phoneMatchesOrder(order, phone)) {
+    return { order: null };
+  }
+  return { order };
+}
+
+export async function getOrderById(idOrNumber: string): Promise<Order | null> {
+  return OrderRepository.getOrderByIdOrNumber(idOrNumber);
 }
 
 export async function getAllOrders(options?: {
   limit?: number;
   offset?: number;
 }): Promise<Order[]> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createAdminClient();
-      let query = supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .order("created_at", { ascending: false });
-
-      if (typeof options?.limit === "number" && options.limit > 0) {
-        const offset = Math.max(0, Math.floor(options.offset || 0));
-        const limit = Math.min(500, Math.floor(options.limit));
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (!error && data && data.length > 0) {
-        return data as unknown as Order[];
-      }
-    } catch {
-      // Fallback to SQLite
-    }
-  }
-
+  await requireAdminAuth();
   return OrderRepository.getAllOrders(options);
 }
 
@@ -446,55 +397,24 @@ export async function updateOrderStatus(
   status: OrderStatus,
   paymentStatus?: PaymentStatus,
   trackingNumber?: string,
-  courierCode?: CourierCode,
-  options?: { internalWebhook?: boolean }
+  courierCode?: CourierCode
 ): Promise<Order | null> {
-  let actor = "safepay-webhook";
-  if (!options?.internalWebhook) {
-    const session = await requireAdminAuth();
-    actor = session.username;
-  }
-
-  const updated = OrderRepository.updateOrderStatusTransaction(
+  const session = await requireAdminAuth();
+  return applyOrderStatusUpdate(
     orderId,
     status,
     paymentStatus,
     trackingNumber,
     courierCode,
-    actor
+    session.username
   );
-
-  if (!updated) return null;
-
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createAdminClient();
-      await supabase
-        .from("orders")
-        .update({
-          status: updated.status,
-          payment_status: updated.payment_status,
-          tracking_number: updated.tracking_number,
-          courier_code: updated.courier_code,
-          updated_at: updated.updated_at,
-        })
-        .eq("id", orderId);
-    } catch {
-      // ignore
-    }
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/orders");
-  revalidatePath("/admin/products");
-  return updated;
 }
 
 export async function deleteOrderAction(orderId: string): Promise<{
   success: boolean;
 }> {
   const session = await requireAdminAuth();
-  OrderRepository.deleteOrder(orderId, session.username);
+  await OrderRepository.deleteOrder(orderId, session.username);
   revalidatePath("/admin");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/products");

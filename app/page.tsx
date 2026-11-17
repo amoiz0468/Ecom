@@ -12,12 +12,12 @@ import { ArrowRight, ShieldCheck, Truck, Sparkles, MessageCircle } from "lucide-
 export const revalidate = 60;
 
 export default async function HomePage() {
-  // Single parallel query instead of redundant catalog fetches
-  const [allProducts, categories] = await Promise.all([
+  // Parallel catalog + settings fetch from Supabase
+  const [allProducts, categories, storeSettings] = await Promise.all([
     getProducts(),
     getCategories(),
+    SettingsRepository.getStoreSettings(),
   ]);
-  const storeSettings = SettingsRepository.getStoreSettings();
 
   const rawFeatured = allProducts.filter((p) => p.is_featured);
   const featuredProducts = (rawFeatured.length > 0 ? rawFeatured : allProducts).slice(0, 4);
@@ -25,7 +25,7 @@ export default async function HomePage() {
   const heroImageUrl =
     featuredProducts[0]?.images[0]?.image_url ||
     allProducts[0]?.images[0]?.image_url ||
-    "/logo-card.jpg";
+    "/images/catalog/hero-tableware.jpg";
   const whatsappNumber =
     storeSettings.whatsapp_number ||
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
@@ -264,7 +264,7 @@ export default async function HomePage() {
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
         title="Chat on WhatsApp"
-        className="fixed bottom-5 right-5 z-40 w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md flex items-center justify-center transition-transform hover:scale-105"
+        className="fixed bottom-20 lg:bottom-5 right-4 lg:right-5 z-40 w-12 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md flex items-center justify-center transition-transform hover:scale-105"
       >
         <MessageCircle className="w-5 h-5" />
       </a>

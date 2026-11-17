@@ -15,6 +15,8 @@ import {
   Plus,
   Check,
   ChevronRight,
+  ChevronDown,
+  Home,
 } from "lucide-react";
 
 const NAV_CATEGORIES = [
@@ -34,6 +36,7 @@ function NavbarInner() {
   const activeCatParam = searchParams.get("category") || "";
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [navCategories, setNavCategories] = useState(NAV_CATEGORIES);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(5000);
@@ -376,48 +379,57 @@ function NavbarInner() {
 
       {/* Clean Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-stone-200 bg-[#fdfbf7] px-4 py-4 space-y-4 shadow-lg max-h-[80vh] overflow-y-auto">
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold px-2 pb-1">
-              Collections
-            </p>
-            {navCategories.map((cat) => {
-              const isSelected =
-                pathname === "/shop" && activeCatParam === cat.slug;
-              return (
-                <Link
-                  key={cat.name}
-                  href={cat.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition ${
-                    isSelected
-                      ? "bg-stone-900 text-white font-medium"
-                      : "text-stone-700 hover:bg-stone-100"
+        <div className="lg:hidden border-t border-stone-200 bg-[#fdfbf7] px-4 py-4 space-y-3 shadow-lg max-h-[75vh] overflow-y-auto">
+          <div className="rounded-xl border border-stone-200/80 bg-white/70 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-stone-100">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2 text-sm font-semibold ${
+                  pathname === "/" ? "text-amber-800" : "text-stone-900"
+                }`}
+              >
+                <Home className="w-4 h-4 shrink-0" />
+                <span>Home</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileCollectionsOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-stone-500 hover:text-stone-900 px-2 py-1 rounded-lg hover:bg-stone-100 transition cursor-pointer"
+                aria-expanded={mobileCollectionsOpen}
+              >
+                <span>Collections</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${
+                    mobileCollectionsOpen ? "rotate-180" : ""
                   }`}
-                >
-                  <span>{cat.name}</span>
-                  <ChevronRight className="w-4 h-4 opacity-40" />
-                </Link>
-              );
-            })}
-          </div>
+                />
+              </button>
+            </div>
 
-          <div className="pt-3 border-t border-stone-200/70 flex flex-wrap gap-x-5 gap-y-2 px-2 text-xs font-medium text-stone-600">
-            <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-              Home
-            </Link>
-            <Link href="/track" onClick={() => setMobileMenuOpen(false)}>
-              Track Order
-            </Link>
-            <Link href="/breakage-policy" onClick={() => setMobileMenuOpen(false)}>
-              Breakage Guarantee
-            </Link>
-            <Link href="/about" onClick={() => setMobileMenuOpen(false)}>
-              About
-            </Link>
-            <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-              Contact
-            </Link>
+            {mobileCollectionsOpen && (
+              <div className="p-2 pl-4 space-y-0.5">
+                {navCategories.map((cat) => {
+                  const isSelected =
+                    pathname === "/shop" && activeCatParam === cat.slug;
+                  return (
+                    <Link
+                      key={cat.name}
+                      href={cat.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition ${
+                        isSelected
+                          ? "bg-stone-900 text-white font-medium"
+                          : "text-stone-700 hover:bg-stone-100"
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      <ChevronRight className="w-4 h-4 opacity-40" />
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -74,7 +74,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Dinner Sets",
     slug: "dinner-sets",
     description: "Complete bone china, porcelain, and ceramic dinnerware sets.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/dinner-set.jpg",
     display_order: 1,
   },
   {
@@ -82,7 +82,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Bowls",
     slug: "bowls",
     description: "Serving bowls, soup bowls, and individual katoris.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/bowls.jpg",
     display_order: 2,
   },
   {
@@ -90,7 +90,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Cups & Mugs",
     slug: "cups-mugs",
     description: "Tea sets, coffee mugs, and qehwa cups.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/cups-mugs.jpg",
     display_order: 3,
   },
   {
@@ -98,7 +98,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Plates & Platters",
     slug: "plates-platters",
     description: "Dinner plates, quarter plates, and serving platters.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/plates-platters.jpg",
     display_order: 4,
   },
   {
@@ -106,7 +106,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Serving Dishes",
     slug: "serving-dishes",
     description: "Covered tureens, handis, and serving dishes.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/serving-dishes.jpg",
     display_order: 5,
   },
   {
@@ -114,7 +114,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
     name: "Glassware",
     slug: "glassware",
     description: "Tumblers, water jugs, and glass drinkware.",
-    image_url: "/logo-card.jpg",
+    image_url: "/images/catalog/glassware.jpg",
     display_order: 6,
   },
 ];

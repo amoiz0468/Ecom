@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getOrderById } from "@/lib/orders";
+import { trackOrderAction } from "@/lib/orders";
 import { Order, OrderStatus } from "@/types";
 import { formatPKR } from "@/lib/utils";
 import { getCourier } from "@/lib/couriers";
@@ -20,17 +20,21 @@ function TrackOrderContent() {
   const initialOrderParam = searchParams.get("order") || "";
 
   const [orderQuery, setOrderQuery] = useState(initialOrderParam);
+  const [phoneQuery, setPhoneQuery] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const runLookup = async (query: string) => {
-    if (!query.trim()) return;
+  const runLookup = async (query: string, phone: string) => {
+    if (!query.trim() || !phone.trim()) return;
     setLoading(true);
     setSearched(true);
+    setErrorMsg("");
     try {
-      const res = await getOrderById(query.trim());
-      setOrder(res);
+      const res = await trackOrderAction(query.trim(), phone.trim());
+      if (res.error) setErrorMsg(res.error);
+      setOrder(res.order);
     } catch {
       setOrder(null);
     } finally {
@@ -39,14 +43,12 @@ function TrackOrderContent() {
   };
 
   useEffect(() => {
-    if (initialOrderParam) {
-      runLookup(initialOrderParam);
-    }
+    setOrderQuery(initialOrderParam);
   }, [initialOrderParam]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    await runLookup(orderQuery);
+    await runLookup(orderQuery, phoneQuery);
   };
 
   const steps: { key: OrderStatus; label: string }[] = [
@@ -93,19 +95,27 @@ function TrackOrderContent() {
           Enter your order reference (e.g. PK-CROCK-10492) to view real-time warehouse &amp; courier status.
         </p>
 
-        <form onSubmit={handleSearch} className="mt-6 flex max-w-md mx-auto gap-2">
+        <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row max-w-xl mx-auto gap-2">
           <input
             type="text"
             required
             value={orderQuery}
             onChange={(e) => setOrderQuery(e.target.value)}
-            placeholder="e.g. PK-CROCK-10492"
+            placeholder="Order # (e.g. PK-CROCK-10492)"
             className="flex-1 text-xs p-3.5 rounded-full border border-stone-300 bg-white uppercase font-mono px-5 focus:outline-none focus:ring-2 focus:ring-amber-700"
+          />
+          <input
+            type="tel"
+            required
+            value={phoneQuery}
+            onChange={(e) => setPhoneQuery(e.target.value)}
+            placeholder="Phone (e.g. 0300-1234567)"
+            className="flex-1 text-xs p-3.5 rounded-full border border-stone-300 bg-white px-5 focus:outline-none focus:ring-2 focus:ring-amber-700"
           />
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3.5 bg-stone-900 text-white rounded-full text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5"
+            className="px-6 py-3.5 bg-stone-900 text-white rounded-full text-xs font-semibold hover:opacity-90 transition flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Search className="w-4 h-4" /> {loading ? "Searching..." : "Track"}
           </button>
@@ -116,7 +126,8 @@ function TrackOrderContent() {
         <div>
           {!order ? (
             <div className="text-center p-8 bg-white rounded-2xl border border-stone-200 text-xs text-stone-500">
-              No order found matching &quot;{orderQuery}&quot;. Please verify your reference number or contact us on WhatsApp.
+              {errorMsg ||
+                `No order found matching "${orderQuery}" and that phone number. Please verify your details or contact us on WhatsApp.`}
             </div>
           ) : (
             <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-8">

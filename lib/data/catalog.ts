@@ -1,39 +1,5 @@
-import {
-  Product,
-  Category,
-  ShippingZone,
-  DiscountCode,
-  StoreSettings,
-} from "@/types";
-import {
-  CatalogRepository,
-  DiscountRepository,
-  SettingsRepository,
-} from "@/lib/db/repositories";
-
-export function getProductsMemoryStore(): Product[] {
-  return CatalogRepository.getAllProducts({ includeUnpublished: true });
-}
-
-export function getCategoriesMemoryStore(): Category[] {
-  return CatalogRepository.getAllCategories();
-}
-
-export function getShippingZonesMemoryStore(): ShippingZone[] {
-  return SettingsRepository.getShippingZones();
-}
-
-export function getDiscountsMemoryStore(): DiscountCode[] {
-  return DiscountRepository.getAll();
-}
-
-export function getStoreSettingsMemoryStore(): StoreSettings {
-  return SettingsRepository.getStoreSettings();
-}
-
-export function commitCatalogChanges(): void {
-  // SQLite commits immediately and replicates to Supabase via SupabaseSync
-}
+import { Product, Category } from "@/types";
+import { CatalogRepository } from "@/lib/db/repositories";
 
 /**
  * Fetch all categories ordered by display_order
@@ -43,7 +9,7 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 /**
- * Fetch products with SQL filtering, search, material filter, price bounds, and sorting
+ * Fetch products with filtering, search, material filter, price bounds, and sorting
  */
 export async function getProducts(options?: {
   categorySlug?: string;

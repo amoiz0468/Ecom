@@ -11,7 +11,7 @@ export async function GET() {
     );
   }
 
-  const metrics = AnalyticsRepository.getDashboardMetrics();
+  const metrics = await AnalyticsRepository.getDashboardMetrics();
   return NextResponse.json({
     success: true,
     metrics,

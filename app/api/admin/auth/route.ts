@@ -5,11 +5,9 @@ import {
   verifyCredentials,
   getAdminSession,
 } from "@/lib/auth/admin";
-import {
-  getSqliteDb,
-  verifyPasswordScrypt,
-  appendAuditLog,
-} from "@/lib/db/sqlite";
+import { AdminUserRepository } from "@/lib/db/repositories";
+import { verifyPasswordScrypt } from "@/lib/auth/password";
+import { appendAuditLog } from "@/lib/db/audit";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { AdminLoginInputSchema } from "@/lib/validators";
 
@@ -30,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const rate = checkRateLimit(`admin-login:${ip}`, 10, 5 * 60 * 1000);
     if (!rate.allowed) {
-      appendAuditLog({
+      await appendAuditLog({
         actor: "anonymous",
         action: "ADMIN_LOGIN_RATE_LIMITED",
         entity_type: "auth",
@@ -62,21 +60,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { username, password } = parsed.data;
-    const db = getSqliteDb();
 
-    // Check SQLite admin_users table (scrypt hash) OR environment credentials
-    const dbAdmin = db
-      .prepare("SELECT * FROM admin_users WHERE username = ?")
-      .get(username) as
-      | { id: string; username: string; password_hash: string; role: string }
-      | undefined;
+    // Check Supabase admin_users table (scrypt hash) OR environment credentials
+    const dbAdmin = await AdminUserRepository.findByUsername(username);
 
     const isValidDbUser =
       dbAdmin && verifyPasswordScrypt(password, dbAdmin.password_hash);
     const isValidEnvUser = verifyCredentials(username, password);
 
     if (!isValidDbUser && !isValidEnvUser) {
-      appendAuditLog({
+      await appendAuditLog({
         actor: username,
         action: "ADMIN_LOGIN_FAILED",
         entity_type: "auth",
@@ -94,13 +87,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (dbAdmin) {
-      db.prepare("UPDATE admin_users SET last_login_at = ? WHERE id = ?").run(
-        new Date().toISOString(),
-        dbAdmin.id
-      );
+      await AdminUserRepository.touchLastLogin(dbAdmin.id);
     }
 
-    appendAuditLog({
+    await appendAuditLog({
       actor: username,
       action: "ADMIN_LOGIN_SUCCESS",
       entity_type: "auth",
@@ -138,7 +128,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const session = await getAdminSession();
   if (session) {
-    appendAuditLog({
+    await appendAuditLog({
       actor: session.username,
       action: "ADMIN_LOGOUT",
       entity_type: "auth",

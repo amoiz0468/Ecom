@@ -39,7 +39,7 @@ export default function AboutPage() {
 
         <div className="relative aspect-16/9 rounded-3xl overflow-hidden bg-stone-100 border border-stone-200/80 shadow-sm">
           <Image
-            src="/logo-card.jpg"
+            src="/images/catalog/hero-tableware.jpg"
             alt="Almoin Crockery Tableware Craft"
             fill
             className="object-cover"

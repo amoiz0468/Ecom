@@ -24,12 +24,11 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [orders, products] = await Promise.all([
+  const [orders, products, analytics] = await Promise.all([
     getAllOrders(),
     getProducts({ includeUnpublished: true }),
+    AnalyticsRepository.getDashboardMetrics(),
   ]);
-
-  const analytics = AnalyticsRepository.getDashboardMetrics();
 
   const totalRevenue = orders
     .filter((o) => o.status !== "cancelled")

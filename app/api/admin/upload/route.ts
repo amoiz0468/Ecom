@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { getAdminSession } from "@/lib/auth/admin";
-import { appendAuditLog } from "@/lib/db/sqlite";
+import { appendAuditLog } from "@/lib/db/audit";
 import {
   getCloudinaryConfig,
   listCloudinaryImages,
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         folder: safeFolder,
       });
 
-      appendAuditLog({
+      await appendAuditLog({
         actor: session.username,
         action: "IMAGE_UPLOADED_CLOUDINARY",
         entity_type: "media",
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
       if (cloudRes.ok) {
         const cloudData = await cloudRes.json();
         if (cloudData.secure_url) {
-          appendAuditLog({
+          await appendAuditLog({
             actor: session.username,
             action: "IMAGE_UPLOADED_CLOUDINARY",
             entity_type: "media",
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
         const imgbbData = await imgbbRes.json();
         const remoteUrl = imgbbData?.data?.url;
         if (remoteUrl) {
-          appendAuditLog({
+          await appendAuditLog({
             actor: session.username,
             action: "IMAGE_UPLOADED_IMGBB",
             entity_type: "media",
@@ -222,7 +222,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Built-in Local Disk Storage (/public/uploads/products)
+    // 4. Built-in Local Disk Storage (development only; serverless hosts are ephemeral)
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        {
+          error:
+            "Cloud image storage (Cloudinary or ImgBB) must be configured in production.",
+        },
+        { status: 500 }
+      );
+    }
+
     const uploadsDir = path.join(process.cwd(), "public", "uploads", "products");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
@@ -244,7 +254,7 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = `/uploads/products/${fileName}`;
 
-    appendAuditLog({
+    await appendAuditLog({
       actor: session.username,
       action: "IMAGE_UPLOADED_LOCAL",
       entity_type: "media",

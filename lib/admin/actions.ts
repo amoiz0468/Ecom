@@ -15,27 +15,11 @@ import {
   AnalyticsRepository,
 } from "@/lib/db/repositories";
 import { requireAdminAuth } from "@/lib/auth/admin";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   SaveProductInputSchema,
   SaveCategoryInputSchema,
   SaveDiscountInputSchema,
 } from "@/lib/validators";
-
-function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return Boolean(
-    url &&
-      key &&
-      !url.includes("your-project") &&
-      !url.includes("placeholder") &&
-      !key.includes("...") &&
-      !key.includes("placeholder")
-  );
-}
 
 // ==========================================
 // 1. PRODUCT & VARIANT MANAGEMENT
@@ -152,26 +136,7 @@ export async function saveProductAction(
       })),
     };
 
-    CatalogRepository.upsertProduct(newProduct, session.username);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createAdminClient();
-        await supabase.from("products").upsert({
-          id: newProduct.id,
-          name: newProduct.name,
-          slug: newProduct.slug,
-          description: newProduct.description,
-          category_id: newProduct.category_id,
-          material: newProduct.material,
-          care_instructions: newProduct.care_instructions,
-          is_featured: newProduct.is_featured,
-          is_published: newProduct.is_published,
-        });
-      } catch {
-        // Fallback to SQLite
-      }
-    }
+    await CatalogRepository.upsertProduct(newProduct, session.username);
 
     revalidatePath("/");
     revalidatePath("/shop");
@@ -192,7 +157,7 @@ export async function updateVariantStockPriceAction(
   newPrice: number
 ): Promise<{ success: boolean; product?: Product }> {
   const session = await requireAdminAuth();
-  const updated = CatalogRepository.updateVariantStockAndPrice(
+  const updated = await CatalogRepository.updateVariantStockAndPrice(
     productId,
     variantId,
     newStock,
@@ -215,7 +180,7 @@ export async function toggleProductFlagAction(
   field: "is_published" | "is_featured"
 ): Promise<{ success: boolean; product?: Product }> {
   const session = await requireAdminAuth();
-  const updated = CatalogRepository.toggleProductFlag(
+  const updated = await CatalogRepository.toggleProductFlag(
     productId,
     field,
     session.username
@@ -233,7 +198,7 @@ export async function deleteProductAction(
   productId: string
 ): Promise<{ success: boolean }> {
   const session = await requireAdminAuth();
-  CatalogRepository.deleteProduct(productId, session.username);
+  await CatalogRepository.deleteProduct(productId, session.username);
 
   revalidatePath("/");
   revalidatePath("/shop");
@@ -260,13 +225,13 @@ export async function saveCategoryAction(input: {
   if (!parsed.success) {
     return {
       success: false,
-      categories: CatalogRepository.getAllCategories(),
+      categories: await CatalogRepository.getAllCategories(),
       error: parsed.error.issues[0]?.message || "Category name is required.",
     };
   }
 
   const valid = parsed.data;
-  const existingCategories = CatalogRepository.getAllCategories();
+  const existingCategories = await CatalogRepository.getAllCategories();
   const cleanSlug =
     valid.slug?.trim() ||
     valid.name
@@ -286,7 +251,7 @@ export async function saveCategoryAction(input: {
     display_order: Number(valid.display_order) || existingCategories.length + 1,
   };
 
-  CatalogRepository.upsertCategory(newCategory, session.username);
+  await CatalogRepository.upsertCategory(newCategory, session.username);
 
   revalidatePath("/");
   revalidatePath("/shop");
@@ -295,7 +260,7 @@ export async function saveCategoryAction(input: {
 
   return {
     success: true,
-    categories: CatalogRepository.getAllCategories(),
+    categories: await CatalogRepository.getAllCategories(),
   };
 }
 
@@ -303,7 +268,7 @@ export async function deleteCategoryAction(
   categoryId: string
 ): Promise<{ success: boolean; categories: Category[] }> {
   const session = await requireAdminAuth();
-  CatalogRepository.deleteCategory(categoryId, session.username);
+  await CatalogRepository.deleteCategory(categoryId, session.username);
 
   revalidatePath("/");
   revalidatePath("/shop");
@@ -311,7 +276,7 @@ export async function deleteCategoryAction(
 
   return {
     success: true,
-    categories: CatalogRepository.getAllCategories(),
+    categories: await CatalogRepository.getAllCategories(),
   };
 }
 
@@ -337,14 +302,14 @@ export async function saveDiscountAction(input: {
   if (!parsed.success) {
     return {
       success: false,
-      discounts: DiscountRepository.getAll(),
+      discounts: await DiscountRepository.getAll(),
       error: parsed.error.issues[0]?.message || "Invalid coupon parameters.",
     };
   }
 
   const valid = parsed.data;
   const cleanCode = valid.code.trim().toUpperCase().replace(/\s+/g, "");
-  const existing = DiscountRepository.findByCode(cleanCode);
+  const existing = await DiscountRepository.findByCode(cleanCode);
 
   const newDiscount: DiscountCode = {
     id: valid.id || existing?.id || `disc-${Date.now()}`,
@@ -363,28 +328,28 @@ export async function saveDiscountAction(input: {
     is_active: true,
   };
 
-  DiscountRepository.upsert(newDiscount, session.username);
+  await DiscountRepository.upsert(newDiscount, session.username);
 
   revalidatePath("/admin/discounts");
-  return { success: true, discounts: DiscountRepository.getAll() };
+  return { success: true, discounts: await DiscountRepository.getAll() };
 }
 
 export async function toggleDiscountStatusAction(
   discountId: string
 ): Promise<{ success: boolean; discounts: DiscountCode[] }> {
   const session = await requireAdminAuth();
-  DiscountRepository.toggleStatus(discountId, session.username);
+  await DiscountRepository.toggleStatus(discountId, session.username);
   revalidatePath("/admin/discounts");
-  return { success: true, discounts: DiscountRepository.getAll() };
+  return { success: true, discounts: await DiscountRepository.getAll() };
 }
 
 export async function deleteDiscountAction(
   discountId: string
 ): Promise<{ success: boolean; discounts: DiscountCode[] }> {
   const session = await requireAdminAuth();
-  DiscountRepository.delete(discountId, session.username);
+  await DiscountRepository.delete(discountId, session.username);
   revalidatePath("/admin/discounts");
-  return { success: true, discounts: DiscountRepository.getAll() };
+  return { success: true, discounts: await DiscountRepository.getAll() };
 }
 
 // ==========================================
@@ -395,10 +360,11 @@ export async function getAdminShippingAndSettingsAction(): Promise<{
   zones: ShippingZone[];
   settings: StoreSettings;
 }> {
-  return {
-    zones: SettingsRepository.getShippingZones(),
-    settings: SettingsRepository.getStoreSettings(),
-  };
+  const [zones, settings] = await Promise.all([
+    SettingsRepository.getShippingZones(),
+    SettingsRepository.getStoreSettings(),
+  ]);
+  return { zones, settings };
 }
 
 export async function updateShippingZoneAction(
@@ -406,7 +372,7 @@ export async function updateShippingZoneAction(
   updates: Partial<ShippingZone>
 ): Promise<{ success: boolean; zones: ShippingZone[] }> {
   const session = await requireAdminAuth();
-  const zones = SettingsRepository.updateShippingZone(
+  const zones = await SettingsRepository.updateShippingZone(
     zoneId,
     updates,
     session.username
@@ -421,7 +387,7 @@ export async function updateStoreSettingsAction(
   updates: Partial<StoreSettings>
 ): Promise<{ success: boolean; settings: StoreSettings }> {
   const session = await requireAdminAuth();
-  const settings = SettingsRepository.updateStoreSettings(
+  const settings = await SettingsRepository.updateStoreSettings(
     updates,
     session.username
   );
