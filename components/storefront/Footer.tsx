@@ -51,14 +51,14 @@ export function Footer() {
           >
             <Image
               src="/logo.png"
-              alt="Almoin Crockery"
+              alt="Almoin Store"
               width={52}
               height={62}
               className="h-14 w-auto object-contain shrink-0"
             />
             <div>
               <span className="font-serif text-lg font-semibold tracking-[0.06em] text-stone-900 group-hover:text-amber-800 transition-colors block">
-                ALMOIN CROCKERY
+                ALMOIN STORE
               </span>
               <span className="text-[10px] uppercase tracking-[0.18em] text-stone-500 block">
                 المُعِين &bull; Pakistan
@@ -66,7 +66,7 @@ export function Footer() {
             </div>
           </Link>
           <p className="leading-relaxed text-stone-500 max-w-xs">
-            Fine bone china, stoneware, and artisan ceramics delivered across Pakistan.
+            Fine Crockery, Ladies Ready-to-Wear Boutique &amp; Ladies Shoes delivered across Pakistan.
           </p>
           <p className="text-stone-500">
             Karachi &bull; Lahore &bull;{" "}
@@ -81,13 +81,28 @@ export function Footer() {
           </p>
         </div>
 
-        {/* Shop */}
+        {/* Stores & Collections */}
         <div>
           <h4 className="font-semibold text-stone-900 uppercase tracking-wider text-[11px] mb-3">
-            Collections
+            Our Stores
           </h4>
           <ul className="space-y-2">
-            {categories.slice(0, 6).map((cat) => (
+            <li>
+              <Link href="/shop?store=crockery" className="hover:text-stone-900 transition">
+                Almoin Crockery
+              </Link>
+            </li>
+            <li>
+              <Link href="/shop?store=boutique" className="hover:text-stone-900 transition">
+                Ladies Boutique (Suits)
+              </Link>
+            </li>
+            <li>
+              <Link href="/shop?store=shoes" className="hover:text-stone-900 transition">
+                Ladies Shoes
+              </Link>
+            </li>
+            {categories.slice(0, 3).map((cat) => (
               <li key={cat.id}>
                 <Link
                   href={`/shop?category=${cat.slug}`}
@@ -146,7 +161,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-stone-200/70 pt-5 pb-22 lg:pb-5 px-4 text-center text-[11px] text-stone-500">
-        © {new Date().getFullYear()} Almoin Crockery. All rights reserved.
+        © {new Date().getFullYear()} Almoin Store. All rights reserved.
       </div>
 
       {/* Mobile Footer Navigation Bar */}

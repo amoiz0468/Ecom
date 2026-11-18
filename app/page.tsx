@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProducts, getCategories } from "@/lib/data/catalog";
 import { SettingsRepository } from "@/lib/db/repositories";
+import { STORE_DEPARTMENTS } from "@/lib/data/constants";
 import { formatPKR } from "@/lib/utils";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Navbar } from "@/components/storefront/Navbar";
@@ -35,7 +36,7 @@ export default async function HomePage() {
   const storeJsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
-    name: storeSettings.store_name || "Almoin Crockery",
+    name: storeSettings.store_name || "Almoin Store",
     url: baseUrl,
     logo: `${baseUrl}/logo-card.jpg`,
     image: `${baseUrl}/logo-card.jpg`,
@@ -65,29 +66,35 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <div className="lg:col-span-6 space-y-6">
                 <p className="text-xs uppercase tracking-[0.22em] text-amber-800 font-medium">
-                  Fine Bone China &amp; Ceramics
+                  Crockery &bull; Ladies Boutique &bull; Footwear
                 </p>
 
                 <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-stone-900 leading-[1.12]">
-                  Timeless Tableware for Modern Homes
+                  Almoin Store — Crafted for Home &amp; Wardrobe
                 </h1>
 
                 <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-lg">
-                  Artisan dinner sets, stoneware bowls, and serving platters—safely delivered across Pakistan with Cash on Delivery.
+                  Three curated destinations in one place: fine bone china crockery, ladies ready-to-wear boutique suits, and handcrafted ladies shoes delivered across Pakistan with Cash on Delivery.
                 </p>
 
-                <div className="pt-1 flex flex-wrap items-center gap-3">
+                <div className="pt-1 flex flex-wrap items-center gap-2.5 sm:gap-3">
                   <Link
                     href="/shop"
                     className="px-6 py-3.5 rounded-full bg-stone-900 hover:bg-amber-800 text-white font-medium text-xs sm:text-sm transition inline-flex items-center gap-2"
                   >
-                    Shop Collection <ArrowRight className="w-4 h-4" />
+                    Shop All Stores <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link
-                    href="/shop?category=dinner-sets"
-                    className="px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-medium text-xs sm:text-sm transition"
+                    href="/shop?store=boutique"
+                    className="px-5 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-medium text-xs sm:text-sm transition"
                   >
-                    Dinner Sets
+                    Ladies Boutique
+                  </Link>
+                  <Link
+                    href="/shop?store=shoes"
+                    className="px-5 py-3.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-medium text-xs sm:text-sm transition"
+                  >
+                    Ladies Shoes
                   </Link>
                 </div>
               </div>
@@ -99,7 +106,7 @@ export default async function HomePage() {
                 >
                   <Image
                     src={heroImageUrl}
-                    alt="Almoin Crockery Fine Tableware"
+                    alt="Almoin Store — Crockery, Boutique & Footwear"
                     fill
                     className="object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
                     priority
@@ -107,6 +114,64 @@ export default async function HomePage() {
                   />
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 1.5 Three Stores Showcase */}
+        <section className="py-12 sm:py-16 bg-[#f7f3eb]/60 border-b border-stone-200/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-baseline justify-between mb-7">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-amber-800 font-semibold">
+                  Three Destinations
+                </p>
+                <h2 className="font-serif text-2xl sm:text-3xl font-medium text-stone-900 mt-0.5">
+                  Explore Our Stores
+                </h2>
+              </div>
+              <Link
+                href="/shop"
+                className="text-xs font-medium text-stone-500 hover:text-stone-900 transition"
+              >
+                Browse all →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+              {STORE_DEPARTMENTS.map((dept) => (
+                <Link
+                  key={dept.id}
+                  href={dept.href}
+                  className="group relative rounded-3xl overflow-hidden bg-white border border-stone-200/80 shadow-xs hover:shadow-xl hover:border-stone-300 transition-all duration-300 flex flex-col"
+                >
+                  <div className="relative aspect-16/10 bg-stone-100 overflow-hidden">
+                    <Image
+                      src={dept.image}
+                      alt={dept.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
+                  <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-amber-800 font-semibold">
+                        {dept.tagline}
+                      </span>
+                      <h3 className="font-serif text-xl sm:text-2xl font-medium text-stone-900 mt-1 group-hover:text-amber-800 transition-colors">
+                        {dept.name}
+                      </h3>
+                      <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                        {dept.description}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-900 group-hover:text-amber-800 transition-colors pt-1">
+                      Enter {dept.shortName} <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

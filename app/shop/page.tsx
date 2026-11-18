@@ -8,9 +8,9 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 export const revalidate = 60;
 
 export const metadata = {
-  title: "Shop All Luxury Crockery, Bone China & Tableware",
+  title: "Shop All | Crockery, Ladies Boutique & Footwear",
   description:
-    "Browse handcrafted dinner sets, stoneware soup bowls, serving platters, and chai cups with Cash on Delivery across Pakistan.",
+    "Browse fine crockery dinner sets, ladies ready-to-wear boutique suits, and ladies shoes with Cash on Delivery across Pakistan.",
   alternates: {
     canonical: "/shop",
   },

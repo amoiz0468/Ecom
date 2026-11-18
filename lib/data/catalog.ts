@@ -1,17 +1,20 @@
-import { Product, Category } from "@/types";
+import { Product, Category, StoreDepartment } from "@/types";
 import { CatalogRepository } from "@/lib/db/repositories";
 
 /**
  * Fetch all categories ordered by display_order
  */
-export async function getCategories(): Promise<Category[]> {
-  return CatalogRepository.getAllCategories();
+export async function getCategories(
+  storeType?: StoreDepartment
+): Promise<Category[]> {
+  return CatalogRepository.getAllCategories(storeType);
 }
 
 /**
  * Fetch products with filtering, search, material filter, price bounds, and sorting
  */
 export async function getProducts(options?: {
+  storeType?: StoreDepartment;
   categorySlug?: string;
   query?: string;
   material?: string;

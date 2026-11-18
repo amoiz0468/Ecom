@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Category } from "@/types";
+import { Category, StoreDepartment } from "@/types";
+import { STORE_DEPARTMENTS } from "@/lib/data/constants";
 import { saveCategoryAction, deleteCategoryAction } from "@/lib/admin/actions";
 import { Plus, Trash2, Pencil, Layers, Upload, Loader2 } from "lucide-react";
 
@@ -16,6 +17,7 @@ export function AdminCategoriesClient({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [storeType, setStoreType] = useState<StoreDepartment>("crockery");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [displayOrder, setDisplayOrder] = useState<number>(initialCategories.length + 1);
@@ -52,6 +54,7 @@ export function AdminCategoriesClient({
     setEditingId(null);
     setName("");
     setSlug("");
+    setStoreType("crockery");
     setDescription("");
     setImageUrl("");
     setDisplayOrder(categories.length + 1);
@@ -61,6 +64,7 @@ export function AdminCategoriesClient({
     setEditingId(cat.id);
     setName(cat.name);
     setSlug(cat.slug);
+    setStoreType(cat.store_type || "crockery");
     setDescription(cat.description || "");
     setImageUrl(cat.image_url || "");
     setDisplayOrder(cat.display_order);
@@ -74,6 +78,7 @@ export function AdminCategoriesClient({
       id: editingId || undefined,
       name,
       slug,
+      store_type: storeType,
       description,
       image_url: imageUrl,
       display_order: displayOrder,
@@ -106,6 +111,23 @@ export function AdminCategoriesClient({
             <h3 className="font-serif text-lg font-bold text-stone-900">
               {editingId ? "Edit Department" : "Add New Department"}
             </h3>
+          </div>
+
+          <div>
+            <label className="font-semibold text-stone-700 block mb-1">
+              Store Department *
+            </label>
+            <select
+              value={storeType}
+              onChange={(e) => setStoreType(e.target.value as StoreDepartment)}
+              className="w-full p-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+            >
+              {STORE_DEPARTMENTS.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name} ({dept.shortName})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

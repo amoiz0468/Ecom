@@ -37,34 +37,34 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Almoin Crockery",
+    title: "Almoin Store",
     statusBarStyle: "default",
   },
   title: {
-    default: "Almoin Crockery (المُعِين) | Luxury Crockery & Fine Bone China Pakistan",
-    template: "%s | Almoin Crockery",
+    default: "Almoin Store (المُعِين) | Crockery, Ladies Boutique & Shoes Pakistan",
+    template: "%s | Almoin Store",
   },
   description:
-    "Curated royal bone china dinner sets, handcrafted ceramic platters, and artisan stoneware tableware delivered across Pakistan with Cash on Delivery and a 100% Transit Breakage Guarantee.",
+    "Shop fine bone china crockery, ladies ready-to-wear boutique suits, and handcrafted ladies shoes delivered across Pakistan with Cash on Delivery.",
   keywords: [
+    "almoin store",
     "almoin crockery",
-    "crockery pakistan",
-    "dinner sets pakistan",
+    "ladies ready to wear suits pakistan",
+    "ladies shoes khussa heels pakistan",
     "bone china dinner set",
-    "ceramic tableware karachi lahore islamabad",
   ],
   openGraph: {
     type: "website",
-    title: "Almoin Crockery | Fine Tableware & Bone China Pakistan",
+    title: "Almoin Store | Crockery, Ladies Boutique & Footwear Pakistan",
     description:
-      "Shop luxury bone china dinner sets, bowls, cups & mugs, and serving platters across Pakistan.",
+      "Three curated stores in one destination: Fine Crockery, Ladies Ready-to-Wear Suits, and Ladies Shoes across Pakistan.",
     images: ["/logo-card.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Almoin Crockery | Fine Tableware & Bone China Pakistan",
+    title: "Almoin Store | Crockery, Ladies Boutique & Footwear Pakistan",
     description:
-      "Shop luxury bone china dinner sets, bowls, cups & mugs, and serving platters across Pakistan.",
+      "Shop Fine Crockery, Ladies Ready-to-Wear Boutique Suits, and Ladies Shoes with Cash on Delivery across Pakistan.",
     images: ["/logo-card.jpg"],
   },
 };

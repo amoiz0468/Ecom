@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/lib/store/cart";
+import { useWishlistStore } from "@/lib/store/wishlist";
+import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
 import { Product } from "@/types";
 import { formatPKR } from "@/lib/utils";
 import {
@@ -17,16 +19,18 @@ import {
   ChevronRight,
   ChevronDown,
   Home,
+  Heart,
 } from "lucide-react";
 
 const NAV_CATEGORIES = [
-  { name: "All Tableware", slug: "", href: "/shop" },
+  { name: "All Products", slug: "", href: "/shop" },
   { name: "Dinner Sets", slug: "dinner-sets", href: "/shop?category=dinner-sets" },
   { name: "Bowls", slug: "bowls", href: "/shop?category=bowls" },
   { name: "Cups & Mugs", slug: "cups-mugs", href: "/shop?category=cups-mugs" },
-  { name: "Plates & Platters", slug: "plates-platters", href: "/shop?category=plates-platters" },
-  { name: "Serving Dishes", slug: "serving-dishes", href: "/shop?category=serving-dishes" },
-  { name: "Glassware", slug: "glassware", href: "/shop?category=glassware" },
+  { name: "Ready-to-Wear Suits", slug: "ready-to-wear-suits", href: "/shop?store=boutique&category=ready-to-wear-suits" },
+  { name: "Festive & Formal Pret", slug: "festive-pret", href: "/shop?store=boutique&category=festive-pret" },
+  { name: "Heels & Sandals", slug: "heels-sandals", href: "/shop?store=shoes&category=heels-sandals" },
+  { name: "Khussas & Flats", slug: "khussas-flats", href: "/shop?store=shoes&category=khussas-flats" },
 ];
 
 function NavbarInner() {
@@ -34,6 +38,7 @@ function NavbarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCatParam = searchParams.get("category") || "";
+  const activeStoreParam = searchParams.get("store") || "";
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(true);
@@ -50,6 +55,8 @@ function NavbarInner() {
 
   const totalItems = useCartStore((state) => state.getTotalItems());
   const toggleCart = useCartStore((state) => state.toggleCart);
+  const wishlistCount = useWishlistStore((state) => state.items.length);
+  const toggleWishlistDrawer = useWishlistStore((state) => state.toggleDrawer);
   const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
@@ -59,7 +66,7 @@ function NavbarInner() {
       .then((data) => {
         if (data?.categories && Array.isArray(data.categories)) {
           setNavCategories([
-            { name: "All Tableware", slug: "", href: "/shop" },
+            { name: "All Products", slug: "", href: "/shop" },
             ...data.categories.map((c: { name: string; slug: string }) => ({
               name: c.name,
               slug: c.slug,
@@ -183,7 +190,7 @@ function NavbarInner() {
             >
               <Image
                 src="/logo.png"
-                alt="Almoin Crockery Logo"
+                alt="Almoin Store Logo"
                 width={44}
                 height={53}
                 priority
@@ -191,10 +198,10 @@ function NavbarInner() {
               />
               <div className="leading-tight min-w-0">
                 <span className="font-serif text-sm sm:text-xl tracking-[0.05em] sm:tracking-[0.06em] text-stone-900 font-semibold group-hover:text-amber-800 transition-colors block truncate">
-                  ALMOIN CROCKERY
+                  ALMOIN STORE
                 </span>
                 <span className="hidden sm:block text-[9px] uppercase tracking-[0.2em] text-stone-500">
-                  Fine Tableware &amp; Bone China
+                  Crockery • Boutique • Shoes
                 </span>
               </div>
             </Link>
@@ -215,7 +222,7 @@ function NavbarInner() {
                   setSearchQuery(e.target.value);
                   setSearchFocused(true);
                 }}
-                placeholder="Search tableware..."
+                placeholder="Search crockery, suits, shoes..."
                 className="w-full pl-10 pr-9 py-2 rounded-full border border-stone-200 bg-white text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-700 transition"
               />
               {searchQuery && (
@@ -306,24 +313,48 @@ function NavbarInner() {
             )}
           </div>
 
-          {/* Right Navigation & Basket */}
-          <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-            <nav className="hidden lg:flex items-center gap-6 text-xs font-medium text-stone-600">
+          {/* Right Navigation, Wishlist & Basket */}
+          <div className="flex items-center gap-2.5 sm:gap-5 shrink-0">
+            <nav className="hidden lg:flex items-center gap-5 text-xs font-medium text-stone-600">
+              <Link
+                href="/shop?store=crockery"
+                className={`hover:text-stone-900 transition ${
+                  pathname === "/shop" && activeStoreParam === "crockery"
+                    ? "text-amber-800 font-semibold"
+                    : ""
+                }`}
+              >
+                Crockery
+              </Link>
+              <Link
+                href="/shop?store=boutique"
+                className={`hover:text-stone-900 transition ${
+                  pathname === "/shop" && activeStoreParam === "boutique"
+                    ? "text-amber-800 font-semibold"
+                    : ""
+                }`}
+              >
+                Boutique
+              </Link>
+              <Link
+                href="/shop?store=shoes"
+                className={`hover:text-stone-900 transition ${
+                  pathname === "/shop" && activeStoreParam === "shoes"
+                    ? "text-amber-800 font-semibold"
+                    : ""
+                }`}
+              >
+                Shoes
+              </Link>
               <Link
                 href="/shop"
                 className={`hover:text-stone-900 transition ${
-                  pathname === "/shop" ? "text-stone-900 font-semibold" : ""
+                  pathname === "/shop" && !activeStoreParam
+                    ? "text-stone-900 font-semibold"
+                    : ""
                 }`}
               >
-                Shop
-              </Link>
-              <Link
-                href="/about"
-                className={`hover:text-stone-900 transition ${
-                  pathname === "/about" ? "text-stone-900 font-semibold" : ""
-                }`}
-              >
-                About
+                All
               </Link>
               <Link
                 href="/track"
@@ -331,9 +362,23 @@ function NavbarInner() {
                   pathname === "/track" ? "text-stone-900 font-semibold" : ""
                 }`}
               >
-                Track Order
+                Track
               </Link>
             </nav>
+
+            <button
+              type="button"
+              onClick={toggleWishlistDrawer}
+              className="relative p-2 rounded-full border border-stone-200 bg-white text-stone-700 hover:border-stone-400 hover:text-amber-800 transition cursor-pointer"
+              aria-label="Open saved wishlist"
+            >
+              <Heart className="w-4 h-4" />
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-700 text-white text-[9px] font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
 
             <button
               type="button"
@@ -360,7 +405,7 @@ function NavbarInner() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tableware..."
+              placeholder="Search crockery, suits, shoes..."
               className="w-full pl-9 pr-8 py-2 rounded-full border border-stone-200 bg-white text-xs text-stone-800 focus:outline-none focus:border-amber-700"
             />
             {searchQuery && (
@@ -445,6 +490,7 @@ export function Navbar() {
       }
     >
       <NavbarInner />
+      <WishlistDrawer />
     </Suspense>
   );
 }

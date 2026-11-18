@@ -60,12 +60,15 @@ export const ProductVariantInputSchema = z.object({
   weight_grams: z.coerce.number().int().min(50).default(500),
 });
 
+export const StoreDepartmentSchema = z.enum(["crockery", "boutique", "shoes"]);
+
 export const SaveProductInputSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "Product name is required."),
   slug: z.string().optional(),
-  description: z.string().trim().default("Handcrafted luxury tableware."),
+  description: z.string().trim().default("Curated quality piece from Almoin Store."),
   category_id: z.string().trim().min(1, "Category is required."),
+  store_type: StoreDepartmentSchema.default("crockery"),
   material: z.string().trim().default("Bone China"),
   image_url: z.string().trim().default(""),
   image_urls: z.array(z.string().trim()).optional(),
@@ -84,6 +87,7 @@ export const SaveCategoryInputSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "Category name is required."),
   slug: z.string().optional(),
+  store_type: StoreDepartmentSchema.default("crockery"),
   description: z.string().optional(),
   image_url: z.string().optional(),
   display_order: z.coerce.number().int().min(1).optional(),

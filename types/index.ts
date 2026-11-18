@@ -1,5 +1,7 @@
 export type UserRole = "customer" | "admin" | "support";
 
+export type StoreDepartment = "crockery" | "boutique" | "shoes";
+
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -32,6 +34,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  store_type?: StoreDepartment;
   description?: string;
   image_url?: string;
   display_order: number;
@@ -69,6 +72,7 @@ export interface Product {
   description: string;
   category_id: string;
   category?: Category;
+  store_type?: StoreDepartment;
   material: string;
   care_instructions: CareInstructions;
   is_fragile: boolean;

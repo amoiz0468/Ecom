@@ -39,7 +39,7 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
 
   const html = `
     <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #fdfbf7; border: 1px solid #e7dfd3; border-radius: 16px; padding: 32px; color: #1c1917;">
-      <p style="text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; color: #b45309; margin: 0 0 8px;">Almoin Crockery • Fine Tableware Pakistan</p>
+      <p style="text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; color: #b45309; margin: 0 0 8px;">Almoin Store • Crockery, Boutique &amp; Footwear</p>
       <h1 style="font-size: 24px; margin: 0 0 12px;">Order Confirmed — ${order.order_number}</h1>
       <p style="font-family: sans-serif; font-size: 14px; color: #57534e; line-height: 1.6;">
         Assalam-o-Alaikum <strong>${order.guest_info.name}</strong>,<br/>
@@ -74,7 +74,7 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
     await resend.emails.send({
       from: fromEmail,
       to: recipientEmail,
-      subject: `Order Confirmed: ${order.order_number} — Almoin Crockery`,
+      subject: `Order Confirmed: ${order.order_number} — Almoin Store`,
       html,
     });
 

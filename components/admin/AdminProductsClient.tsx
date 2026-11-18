@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Product, Category } from "@/types";
+import { Product, Category, StoreDepartment } from "@/types";
+import { STORE_DEPARTMENTS } from "@/lib/data/constants";
 import { formatPKR } from "@/lib/utils";
 import {
   saveProductAction,
@@ -42,14 +43,9 @@ interface CloudinaryLibraryAsset {
   height: number;
 }
 
-const MATERIALS = [
-  "Bone China",
-  "Ceramic",
-  "Porcelain",
-  "Stoneware",
-  "Terracotta",
-  "Opal Glass",
-];
+const MATERIALS = Array.from(
+  new Set(STORE_DEPARTMENTS.flatMap((d) => d.materials))
+);
 
 interface VariantFormRow {
   id?: string;
@@ -84,6 +80,9 @@ export function AdminProductsClient({
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(
     categories[0]?.id || "cat-dinner-sets"
+  );
+  const [storeType, setStoreType] = useState<StoreDepartment>(
+    categories[0]?.store_type || "crockery"
   );
   const [material, setMaterial] = useState("Bone China");
 
@@ -369,6 +368,7 @@ export function AdminProductsClient({
       slug,
       description,
       category_id: categoryId,
+      store_type: storeType,
       material,
       image_url: combinedUrls[0],
       image_urls: combinedUrls,
@@ -833,11 +833,42 @@ export function AdminProductsClient({
 
                 <div>
                   <label className="font-semibold text-stone-700 block mb-1">
-                    Category / Department *
+                    Store Department *
+                  </label>
+                  <select
+                    value={storeType}
+                    onChange={(e) => {
+                      const next = e.target.value as StoreDepartment;
+                      setStoreType(next);
+                      const deptMeta = STORE_DEPARTMENTS.find((d) => d.id === next);
+                      if (deptMeta && !deptMeta.materials.includes(material)) {
+                        setMaterial(deptMeta.materials[0]);
+                      }
+                    }}
+                    className="w-full p-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-600"
+                  >
+                    {STORE_DEPARTMENTS.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name} ({dept.shortName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-stone-700 block mb-1">
+                    Category / Sub-Collection *
                   </label>
                   <select
                     value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
+                    onChange={(e) => {
+                      const cid = e.target.value;
+                      setCategoryId(cid);
+                      const matchedCat = categories.find((c) => c.id === cid);
+                      if (matchedCat?.store_type) {
+                        setStoreType(matchedCat.store_type);
+                      }
+                    }}
                     className="w-full p-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-600"
                   >
                     {categories.map((c) => (
@@ -850,7 +881,7 @@ export function AdminProductsClient({
 
                 <div>
                   <label className="font-semibold text-stone-700 block mb-1">
-                    Ceramic Body / Material *
+                    Material / Fabric *
                   </label>
                   <select
                     value={material}

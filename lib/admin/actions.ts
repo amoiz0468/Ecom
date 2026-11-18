@@ -7,6 +7,7 @@ import {
   ShippingZone,
   DiscountCode,
   StoreSettings,
+  StoreDepartment,
 } from "@/types";
 import {
   CatalogRepository,
@@ -31,6 +32,7 @@ export interface CreateOrUpdateProductInput {
   slug?: string;
   description: string;
   category_id: string;
+  store_type?: StoreDepartment;
   material: string;
   image_url: string;
   image_urls?: string[];
@@ -89,13 +91,15 @@ export async function saveProductAction(
         ? rawUrls
         : ["/logo-card.jpg"];
 
+    const storeType = validInput.store_type || "crockery";
     const newProduct: Product = {
       id: productId,
       name: validInput.name.trim(),
       slug: cleanSlug,
       description:
-        validInput.description.trim() || "Handcrafted luxury tableware.",
+        validInput.description.trim() || "Curated piece from Almoin Store.",
       category_id: validInput.category_id,
+      store_type: storeType,
       material: validInput.material || "Bone China",
       care_instructions: {
         dishwasher_safe: validInput.dishwasher_safe,
@@ -103,9 +107,11 @@ export async function saveProductAction(
         oven_safe: validInput.oven_safe,
         handwash_only: validInput.handwash_only,
       },
-      is_fragile: true,
+      is_fragile: storeType === "crockery",
       breakage_guarantee:
-        "Protected by 100% Free Transit Breakage Replacement Guarantee (30-second unboxing video required)",
+        storeType === "crockery"
+          ? "Protected by 100% Free Transit Breakage Replacement Guarantee (30-second unboxing video required)"
+          : "7-Day Easy Size Exchange & Quality Guarantee across Pakistan",
       is_featured: validInput.is_featured,
       is_published: validInput.is_published,
       rating: 0,
@@ -216,6 +222,7 @@ export async function saveCategoryAction(input: {
   id?: string;
   name: string;
   slug?: string;
+  store_type?: StoreDepartment;
   description?: string;
   image_url?: string;
   display_order?: number;
@@ -244,6 +251,7 @@ export async function saveCategoryAction(input: {
     id: categoryId,
     name: valid.name.trim(),
     slug: cleanSlug,
+    store_type: valid.store_type || "crockery",
     description: valid.description?.trim() || "",
     image_url:
       valid.image_url?.trim() ||

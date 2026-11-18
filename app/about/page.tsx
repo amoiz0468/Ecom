@@ -6,8 +6,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export const metadata = {
-  title: "About Almoin Crockery | Fine Tableware for Pakistani Homes",
-  description: "Crafting timeless bone china, porcelain, and stoneware tableware across Pakistan.",
+  title: "About Almoin Store | Crockery, Ladies Boutique & Shoes Pakistan",
+  description:
+    "Curated fine crockery, ladies ready-to-wear boutique suits, and handcrafted ladies shoes delivered across Pakistan.",
 };
 
 export default function AboutPage() {
@@ -20,7 +21,7 @@ export default function AboutPage() {
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <Image
             src="/logo.png"
-            alt="Almoin Crockery"
+            alt="Almoin Store"
             width={92}
             height={110}
             priority
@@ -30,17 +31,17 @@ export default function AboutPage() {
             Our Story &amp; Craft
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl font-medium text-stone-900">
-            Almoin Crockery
+            Almoin Store
           </h1>
           <p className="text-sm text-stone-600 leading-relaxed">
-            Bringing refined bone china, artisan stoneware, and heirloom hospitality to dining tables across Pakistan.
+            Three curated stores in one destination: fine crockery, ladies ready-to-wear boutique suits, and handcrafted ladies shoes across Pakistan.
           </p>
         </div>
 
         <div className="relative aspect-16/9 rounded-3xl overflow-hidden bg-stone-100 border border-stone-200/80 shadow-sm">
           <Image
             src="/images/catalog/hero-tableware.jpg"
-            alt="Almoin Crockery Tableware Craft"
+            alt="Almoin Store Collection"
             fill
             className="object-cover"
             sizes="(max-width: 896px) 100vw, 896px"
@@ -49,10 +50,10 @@ export default function AboutPage() {
 
         <div className="max-w-2xl mx-auto text-sm text-stone-600 leading-relaxed space-y-4">
           <p>
-            In Pakistani homes, the dining table is a centerpiece of warmth and hospitality—where families gather over festive dinners, everyday meals, and evening chai.
+            In Pakistani homes, hospitality and personal style go hand in hand—from festive dining tables to effortless everyday wardrobes.
           </p>
           <p>
-            <strong className="text-stone-900">Almoin Crockery</strong> curates fine bone china dinner sets, durable stoneware bowls, and elegant serving platters crafted with food-safe glazes and packed in shock-absorbent cartons for safe nationwide delivery.
+            <strong className="text-stone-900">Almoin Store</strong> brings together three dedicated collections under one roof: <strong className="text-stone-900">Almoin Crockery</strong> (fine bone china &amp; stoneware), <strong className="text-stone-900">Almoin Boutique</strong> (ladies ready-to-wear pret suits), and <strong className="text-stone-900">Almoin Shoes</strong> (handcrafted khussas, heels &amp; flats) with nationwide Cash on Delivery.
           </p>
 
           <div className="pt-6 flex justify-center">

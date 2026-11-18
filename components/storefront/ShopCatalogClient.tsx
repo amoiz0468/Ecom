@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Product, Category } from "@/types";
+import { Product, Category, StoreDepartment } from "@/types";
+import { STORE_DEPARTMENTS } from "@/lib/data/constants";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import {
   SlidersHorizontal,
@@ -20,18 +21,14 @@ const SORT_OPTIONS = [
   { value: "rating", label: "Top Rated" },
 ];
 
-const MATERIALS = [
-  "Bone China",
-  "Ceramic",
-  "Porcelain",
-  "Stoneware",
-  "Terracotta",
-  "Opal Glass",
-];
+const ALL_MATERIALS = Array.from(
+  new Set(STORE_DEPARTMENTS.flatMap((d) => d.materials))
+);
 
 function filterAndSortProducts(
   products: Product[],
   categories: Category[],
+  storeType: string,
   categorySlug: string,
   material: string,
   query: string,
@@ -44,6 +41,7 @@ function filterAndSortProducts(
 
   return products
     .filter((p) => {
+      if (storeType && (p.store_type || "crockery") !== storeType) return false;
       if (catObj && p.category_id !== catObj.id) return false;
       if (material && p.material.toLowerCase() !== material.toLowerCase()) {
         return false;
@@ -90,6 +88,9 @@ export function ShopCatalogClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [activeStore, setActiveStore] = useState(
+    searchParams.get("store") || ""
+  );
   const [activeCategory, setActiveCategory] = useState(
     searchParams.get("category") || ""
   );
@@ -109,10 +110,12 @@ export function ShopCatalogClient({
   const [draftMaterial, setDraftMaterial] = useState(activeMaterial);
 
   useEffect(() => {
+    const st = searchParams.get("store") || "";
     const cat = searchParams.get("category") || "";
     const mat = searchParams.get("material") || "";
     const srt = searchParams.get("sort") || "";
     const q = searchParams.get("q") || "";
+    setActiveStore(st);
     setActiveCategory(cat);
     setActiveMaterial(mat);
     setActiveSort(srt);
@@ -128,11 +131,14 @@ export function ShopCatalogClient({
   };
 
   const updateUrlParams = (updates: {
+    store?: string;
     category?: string;
     material?: string;
     sort?: string;
     q?: string;
   }) => {
+    const nextStore =
+      updates.store !== undefined ? updates.store : activeStore;
     const nextCat =
       updates.category !== undefined ? updates.category : activeCategory;
     const nextMat =
@@ -141,6 +147,7 @@ export function ShopCatalogClient({
       updates.sort !== undefined ? updates.sort : activeSort;
     const nextQ = updates.q !== undefined ? updates.q : searchQuery;
 
+    setActiveStore(nextStore);
     setActiveCategory(nextCat);
     setActiveMaterial(nextMat);
     setActiveSort(nextSort);
@@ -149,6 +156,7 @@ export function ShopCatalogClient({
     setDraftMaterial(nextMat);
 
     const params = new URLSearchParams();
+    if (nextStore) params.set("store", nextStore);
     if (nextCat) params.set("category", nextCat);
     if (nextMat) params.set("material", nextMat);
     if (nextSort) params.set("sort", nextSort);
@@ -168,6 +176,7 @@ export function ShopCatalogClient({
   };
 
   const resetAll = () => {
+    setActiveStore("");
     setActiveCategory("");
     setActiveMaterial("");
     setActiveSort("");
@@ -178,17 +187,43 @@ export function ShopCatalogClient({
     router.replace("/shop", { scroll: false });
   };
 
+  const visibleCategories = useMemo(
+    () =>
+      activeStore
+        ? categories.filter(
+            (c) => (c.store_type || "crockery") === activeStore
+          )
+        : categories,
+    [categories, activeStore]
+  );
+
+  const visibleMaterials = useMemo(() => {
+    if (!activeStore) return ALL_MATERIALS;
+    const dept = STORE_DEPARTMENTS.find((d) => d.id === activeStore);
+    return dept ? dept.materials : ALL_MATERIALS;
+  }, [activeStore]);
+
+  const storeProducts = useMemo(
+    () =>
+      activeStore
+        ? initialProducts.filter(
+            (p) => (p.store_type || "crockery") === activeStore
+          )
+        : initialProducts,
+    [initialProducts, activeStore]
+  );
+
   // Memoized category counts
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const c of categories) {
+    for (const c of visibleCategories) {
       map.set(
         c.slug,
-        initialProducts.filter((p) => p.category_id === c.id).length
+        storeProducts.filter((p) => p.category_id === c.id).length
       );
     }
     return map;
-  }, [categories, initialProducts]);
+  }, [visibleCategories, storeProducts]);
 
   // Live filtered products
   const filteredProducts = useMemo(
@@ -196,6 +231,7 @@ export function ShopCatalogClient({
       filterAndSortProducts(
         initialProducts,
         categories,
+        activeStore,
         activeCategory,
         activeMaterial,
         searchQuery,
@@ -204,6 +240,7 @@ export function ShopCatalogClient({
     [
       initialProducts,
       categories,
+      activeStore,
       activeCategory,
       activeMaterial,
       searchQuery,
@@ -217,6 +254,7 @@ export function ShopCatalogClient({
       filterAndSortProducts(
         initialProducts,
         categories,
+        activeStore,
         draftCategory,
         draftMaterial,
         searchQuery,
@@ -225,6 +263,7 @@ export function ShopCatalogClient({
     [
       initialProducts,
       categories,
+      activeStore,
       draftCategory,
       draftMaterial,
       searchQuery,
@@ -233,7 +272,7 @@ export function ShopCatalogClient({
   );
 
   const hasActiveFilters = Boolean(
-    activeCategory || activeMaterial || searchQuery.trim()
+    activeStore || activeCategory || activeMaterial || searchQuery.trim()
   );
   const activeFilterCount =
     (activeCategory ? 1 : 0) + (activeMaterial ? 1 : 0);
@@ -243,11 +282,17 @@ export function ShopCatalogClient({
       activeCategory.replace(/-/g, " ")
     : "";
 
+  const activeStoreMeta = STORE_DEPARTMENTS.find(
+    (d) => d.id === (activeStore as StoreDepartment)
+  );
+
   const pageTitle = activeCategory
     ? activeCategoryName
+    : activeStoreMeta
+    ? activeStoreMeta.name
     : searchQuery.trim()
     ? `Results for "${searchQuery}"`
-    : "All Tableware";
+    : "All Almoin Store";
 
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -268,6 +313,40 @@ export function ShopCatalogClient({
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      {/* Store Department Switcher */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 border-b border-stone-200/60 no-scrollbar">
+        <button
+          type="button"
+          onClick={() => updateUrlParams({ store: "", category: "", material: "" })}
+          className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium transition cursor-pointer ${
+            !activeStore
+              ? "bg-stone-900 text-white"
+              : "bg-white border border-stone-200 text-stone-700 hover:border-stone-400"
+          }`}
+        >
+          All Stores
+        </button>
+        {STORE_DEPARTMENTS.map((dept) => {
+          const isCurrent = activeStore === dept.id;
+          return (
+            <button
+              key={dept.id}
+              type="button"
+              onClick={() =>
+                updateUrlParams({ store: dept.id, category: "", material: "" })
+              }
+              className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium transition cursor-pointer ${
+                isCurrent
+                  ? "bg-amber-800 text-white"
+                  : "bg-white border border-stone-200 text-stone-700 hover:border-stone-400"
+              }`}
+            >
+              {dept.shortName}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Clean Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 border-b border-stone-200/70 pb-4 sm:pb-5 mb-5 sm:mb-8">
         <div className="flex items-baseline gap-2.5 sm:gap-3">
@@ -433,12 +512,12 @@ export function ShopCatalogClient({
                         : "bg-white border border-stone-200/70 text-stone-700"
                     }`}
                   >
-                    <span>All Tableware</span>
+                    <span>{activeStoreMeta ? `All ${activeStoreMeta.shortName}` : "All Products"}</span>
                     <span className="text-[11px] opacity-60">
-                      {initialProducts.length}
+                      {storeProducts.length}
                     </span>
                   </button>
-                  {categories.map((c) => {
+                  {visibleCategories.map((c) => {
                     const isSelected = draftCategory === c.slug;
                     return (
                       <button
@@ -466,7 +545,7 @@ export function ShopCatalogClient({
                   Material
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {MATERIALS.map((mat) => {
+                  {visibleMaterials.map((mat) => {
                     const isSelected =
                       draftMaterial.toLowerCase() === mat.toLowerCase();
                     return (
@@ -550,13 +629,13 @@ export function ShopCatalogClient({
                         : "text-stone-600 hover:bg-stone-100"
                     }`}
                   >
-                    <span>All Tableware</span>
+                    <span>{activeStoreMeta ? `All ${activeStoreMeta.shortName}` : "All Products"}</span>
                     <span className="text-[11px] opacity-60">
-                      {initialProducts.length}
+                      {storeProducts.length}
                     </span>
                   </button>
                 </li>
-                {categories.map((c) => {
+                {visibleCategories.map((c) => {
                   const isSelected = activeCategory === c.slug;
                   return (
                     <li key={c.id}>
@@ -585,7 +664,7 @@ export function ShopCatalogClient({
                 Material
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {MATERIALS.map((mat) => {
+                {visibleMaterials.map((mat) => {
                   const isSelected =
                     activeMaterial.toLowerCase() === mat.toLowerCase();
                   return (

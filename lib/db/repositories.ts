@@ -13,6 +13,7 @@ import {
   DiscountCode,
   StoreSettings,
   CustomerInquiry,
+  StoreDepartment,
 } from "@/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendAuditLog, AuditLogEntry } from "@/lib/db/audit";
@@ -68,7 +69,7 @@ function escapeLike(value: string): string {
 // ============================================================================
 
 export const CatalogRepository = {
-  async getAllCategories(): Promise<Category[]> {
+  async getAllCategories(storeType?: StoreDepartment): Promise<Category[]> {
     const supabase = createAdminClient();
     const rows = check(
       await supabase
@@ -78,19 +79,29 @@ export const CatalogRepository = {
         .order("name", { ascending: true }),
       "Load categories"
     ) as Row[];
-    return rows.map(mapCategoryRow);
+    const mapped = rows.map(mapCategoryRow);
+    return storeType
+      ? mapped.filter((c) => (c.store_type || "crockery") === storeType)
+      : mapped;
   },
 
   async upsertCategory(category: Category, actor = "admin"): Promise<Category> {
     const supabase = createAdminClient();
-    const { error } = await supabase.from("categories").upsert({
+    const payload = {
       id: category.id,
       name: category.name,
       slug: category.slug,
+      store_type: category.store_type || "crockery",
       description: category.description || "",
       image_url: category.image_url || "",
       display_order: category.display_order,
-    });
+    };
+    let { error } = await supabase.from("categories").upsert(payload);
+    if (error && error.message.includes("store_type")) {
+      const { store_type: _omit, ...legacyPayload } = payload;
+      void _omit;
+      ({ error } = await supabase.from("categories").upsert(legacyPayload));
+    }
     if (error) {
       if (error.code === "23505") {
         throw new Error("A category with this slug already exists.");
@@ -132,6 +143,7 @@ export const CatalogRepository = {
   },
 
   async getAllProducts(options?: {
+    storeType?: StoreDepartment;
     categorySlug?: string;
     query?: string;
     material?: string;
@@ -170,6 +182,12 @@ export const CatalogRepository = {
 
     const rows = check(await query, "Load products") as Row[];
     let products = rows.map(mapEmbeddedProductRow);
+
+    if (options?.storeType) {
+      products = products.filter(
+        (p) => (p.store_type || "crockery") === options.storeType
+      );
+    }
 
     if (options?.query) {
       const q = options.query.trim().toLowerCase();
@@ -288,6 +306,7 @@ export const CatalogRepository = {
         slug: product.slug,
         description: product.description,
         category_id: product.category_id,
+        store_type: product.store_type || "crockery",
         material: product.material,
         care_instructions: product.care_instructions,
         is_fragile: product.is_fragile,
@@ -1254,11 +1273,50 @@ export async function ensureCoreConfig(): Promise<void> {
 // ROW MAPPERS
 // ============================================================================
 
+function inferStoreType(
+  explicit: unknown,
+  idOrSlug?: string,
+  material?: string
+): StoreDepartment {
+  if (explicit === "crockery" || explicit === "boutique" || explicit === "shoes") {
+    return explicit;
+  }
+  const key = `${idOrSlug || ""} ${material || ""}`.toLowerCase();
+  if (
+    key.includes("rtw") ||
+    key.includes("suit") ||
+    key.includes("festive") ||
+    key.includes("pret") ||
+    key.includes("boutique") ||
+    key.includes("lawn") ||
+    key.includes("chiffon") ||
+    key.includes("organza") ||
+    key.includes("raw silk")
+  ) {
+    return "boutique";
+  }
+  if (
+    key.includes("heel") ||
+    key.includes("sandal") ||
+    key.includes("khussa") ||
+    key.includes("flat") ||
+    key.includes("shoe") ||
+    key.includes("leather") ||
+    key.includes("suede") ||
+    key.includes("embroidered silk") ||
+    key.includes("patent")
+  ) {
+    return "shoes";
+  }
+  return "crockery";
+}
+
 function mapCategoryRow(r: Row): Category {
   return {
     id: str(r.id),
     name: str(r.name),
     slug: str(r.slug),
+    store_type: inferStoreType(r.store_type, `${str(r.id)} ${str(r.slug)}`),
     description: str(r.description),
     image_url: str(r.image_url),
     display_order: num(r.display_order, 1),
@@ -1315,6 +1373,11 @@ function mapEmbeddedProductRow(r: Row): Product {
     slug: str(r.slug),
     description: str(r.description),
     category_id: str(r.category_id),
+    store_type: inferStoreType(
+      r.store_type,
+      `${str(r.category_id)} ${str(r.slug)} ${str(r.id)}`,
+      str(r.material)
+    ),
     material: str(r.material),
     care_instructions: (r.care_instructions as Product["care_instructions"]) || {
       dishwasher_safe: true,

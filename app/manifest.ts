@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Almoin Crockery — Fine Tableware & Bone China",
+    name: "Almoin Store — Crockery, Ladies Boutique & Shoes",
     short_name: "Almoin",
     description:
-      "Curated royal bone china dinner sets, ceramic platters, and artisan stoneware tableware across Pakistan.",
+      "Curated fine crockery, ladies ready-to-wear boutique suits, and ladies footwear delivered across Pakistan.",
     start_url: "/",
     display: "standalone",
     background_color: "#fdfbf7",
@@ -25,4 +25,3 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
   };
 }
-
