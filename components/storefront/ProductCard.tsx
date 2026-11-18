@@ -59,7 +59,7 @@ export const ProductCard = memo(function ProductCard({
       <article className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-stone-200/70 hover:border-stone-300 hover:shadow-lg hover:shadow-stone-900/5 transition-all duration-300">
         {/* Product Photo with Wishlist & Quick View */}
         <div className="relative aspect-square overflow-hidden bg-[#f7f4ee]">
-          <Link href={`/product/${product.slug}`} className="block w-full h-full">
+          <Link href={`/product/${product.slug}`} className="relative block w-full h-full">
             <Image
               src={product.images[0]?.image_url || "/logo-card.jpg"}
               alt={product.images[0]?.alt_text || product.name}
