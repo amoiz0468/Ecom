@@ -698,13 +698,25 @@ function buildSeedProducts(categoryIdsBySlug: Map<string, string>): Product[] {
 async function main() {
   await ensureCoreConfig();
 
-  // 1. Ensure all 3-store categories exist & update their images
+  // 1. Ensure all 3-store categories exist & have correct image_url + store_type
   const { DEFAULT_CATEGORIES } = await import("@/lib/data/constants");
   const existingCategories = await CatalogRepository.getAllCategories();
-  const existingSlugs = new Set(existingCategories.map((c) => c.slug));
+  const existingBySlug = new Map(existingCategories.map((c) => [c.slug, c]));
   for (const def of DEFAULT_CATEGORIES) {
-    if (!existingSlugs.has(def.slug)) {
-      await CatalogRepository.upsertCategory(def, "seed");
+    const existing = existingBySlug.get(def.slug);
+    if (
+      !existing ||
+      existing.store_type !== def.store_type ||
+      existing.image_url !== def.image_url
+    ) {
+      await CatalogRepository.upsertCategory(
+        {
+          ...(existing || def),
+          store_type: def.store_type,
+          image_url: def.image_url,
+        },
+        "seed"
+      );
     }
   }
 
