@@ -40,7 +40,7 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
-              alt="Almoin Crockery"
+              alt="Almoin Store"
               className="h-14 w-auto object-contain shrink-0"
             />
             <div>

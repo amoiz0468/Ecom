@@ -12,7 +12,7 @@ export default function ErrorPage({
     <div className="min-h-screen flex items-center justify-center bg-[#fdfbf7] px-4 text-stone-900">
       <div className="max-w-md w-full text-center space-y-5 bg-white p-8 rounded-3xl border border-stone-200 shadow-sm">
         <p className="text-[11px] uppercase tracking-[0.2em] text-amber-800 font-semibold">
-          Almoin Crockery
+          Almoin Store
         </p>
         <h1 className="font-serif text-3xl font-medium">
           Something went wrong

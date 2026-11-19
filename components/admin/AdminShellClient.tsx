@@ -48,7 +48,7 @@ export function AdminShellClient({
             <Link href="/admin" className="flex items-center gap-2.5">
               <Image
                 src="/logo.png"
-                alt="Almoin Crockery"
+                alt="Almoin Store"
                 width={40}
                 height={48}
                 className="h-11 w-auto object-contain shrink-0"

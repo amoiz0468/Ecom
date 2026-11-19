@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Lock } from "lucide-react";
 
 export const metadata = {
-  title: "Checkout | Almoin Crockery",
+  title: "Checkout | Almoin Store",
   description: "Fast checkout with Cash on Delivery across Pakistan.",
   robots: {
     index: false,
@@ -24,14 +24,14 @@ export default function CheckoutPage() {
           >
             <Image
               src="/logo.png"
-              alt="Almoin Crockery"
+              alt="Almoin Store"
               width={40}
               height={48}
               priority
               className="h-11 w-auto object-contain"
             />
             <span className="font-serif text-lg sm:text-xl font-semibold tracking-[0.06em]">
-              ALMOIN CROCKERY
+              ALMOIN STORE
             </span>
           </Link>
           <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500">

@@ -19,7 +19,7 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
 
   const fromEmail =
     process.env.RESEND_FROM_EMAIL ||
-    "Almoin Crockery <orders@almoincrockery.pk>";
+    "Almoin Store <orders@almoinstore.pk>";
 
   const itemsHtml = order.items
     .map(

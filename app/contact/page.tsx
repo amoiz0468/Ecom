@@ -36,7 +36,7 @@ export default function ContactPage() {
     settings?.whatsapp_number ||
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
     "+923001234567";
-  const storeEmail = settings?.store_email || "support@almoincrockery.pk";
+  const storeEmail = settings?.store_email || "support@almoinstore.pk";
   const storePhone = settings?.store_phone || "+92 21 35812345";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +69,7 @@ export default function ContactPage() {
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-12 space-y-10 w-full">
         <div>
           <h1 className="font-serif text-3xl font-bold">
-            Contact Almoin Crockery
+            Contact Almoin Store
           </h1>
           <p className="text-xs text-stone-500 mt-1">
             Need guidance selecting dinnerware, ordering custom dinner sets, or

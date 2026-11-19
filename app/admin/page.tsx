@@ -72,7 +72,7 @@ export default async function AdminDashboardPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="font-serif text-2xl font-bold">
-              Almoin Crockery — Live Operations
+              Almoin Store — Live Operations
             </h2>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
               <Database className="w-3 h-3 text-emerald-600" />
@@ -461,7 +461,7 @@ export default async function AdminDashboardPage() {
                     <div className="flex items-center gap-3">
                       <a
                         href={`https://wa.me/${inq.phone.replace(/\D/g, "").replace(/^0/, "92")}?text=${encodeURIComponent(
-                          `Assalam-o-Alaikum ${inq.name}, regarding your inquiry at Almoin Crockery: `
+                          `Assalam-o-Alaikum ${inq.name}, regarding your inquiry at Almoin Store: `
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"

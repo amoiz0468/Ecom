@@ -32,7 +32,7 @@ export default async function HomePage() {
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
     "+923001234567";
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://almoincrockery.pk";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://almoinstore.pk";
   const storeJsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
@@ -323,7 +323,7 @@ export default async function HomePage() {
       {/* Clean Icon-Only WhatsApp Button */}
       <a
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-          "Assalam-o-Alaikum Almoin Crockery, I need help choosing tableware."
+          "Assalam-o-Alaikum Almoin Store, I need help choosing products."
         )}`}
         target="_blank"
         rel="noopener noreferrer"

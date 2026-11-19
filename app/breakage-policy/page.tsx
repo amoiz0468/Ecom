@@ -4,7 +4,7 @@ import { ShieldCheck, Video, RefreshCw, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "100% Free Transit Breakage Guarantee & Unboxing Policy | Almoin Crockery",
+  title: "100% Free Transit Breakage Guarantee & Unboxing Policy | Almoin Store",
   description: "Learn about our breakage replacement guarantee for dinnerware and ceramics across Pakistan.",
 };
 

@@ -3,7 +3,7 @@ import { Footer } from "@/components/storefront/Footer";
 import { Truck, MapPin, CheckCircle2 } from "lucide-react";
 
 export const metadata = {
-  title: "Shipping & Delivery Rates Across Pakistan | Almoin Crockery",
+  title: "Shipping & Delivery Rates Across Pakistan | Almoin Store",
   description: "Nationwide express delivery via TCS, Leopards, and Trax with free shipping on orders over Rs. 5,000.",
 };
 

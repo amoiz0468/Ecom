@@ -45,7 +45,7 @@ export function OrderSuccessClient({ order }: { order: Order }) {
     storeSettings?.whatsapp_number ||
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ||
     "+923001234567";
-  const whatsappMessage = `Assalam-o-Alaikum Almoin Crockery, I have placed order #${order.order_number} for ${formatPKR(
+  const whatsappMessage = `Assalam-o-Alaikum Almoin Store, I have placed order #${order.order_number} for ${formatPKR(
     order.total_pkr
   )}. Delivery address: ${order.shipping_address.street_address}, ${order.shipping_address.city}.`;
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -90,7 +90,7 @@ export function OrderSuccessClient({ order }: { order: Order }) {
   };
 
   const bankName = storeSettings?.bank_name || "Meezan Bank Limited";
-  const bankTitle = storeSettings?.bank_account_title || "ALMOIN CROCKERY";
+  const bankTitle = storeSettings?.bank_account_title || "ALMOIN STORE";
   const bankIban = storeSettings?.bank_iban || "PK12MEZN0001020304050607";
   const walletNumber = storeSettings?.jazzcash_number || "03001234567";
 

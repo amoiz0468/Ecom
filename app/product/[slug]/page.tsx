@@ -21,11 +21,11 @@ export async function generateMetadata({
   const product = await getProductBySlug(slug);
 
   if (!product) {
-    return { title: "Product Not Found | Almoin Crockery" };
+    return { title: "Product Not Found | Almoin Store" };
   }
 
   return {
-    title: product.seo_title || `${product.name} | Almoin Crockery`,
+    title: product.seo_title || `${product.name} | Almoin Store`,
     description:
       product.seo_description ||
       `${product.name} crafted in ${product.material}. Delivered safely across Pakistan.`,
@@ -69,7 +69,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     name: product.name,
     image: product.images.map((img) => img.image_url),
     description: product.description,
-    brand: { "@type": "Brand", name: "Almoin Crockery" },
+    brand: { "@type": "Brand", name: "Almoin Store" },
     offers:
       activeVariants.length > 1 && prices.length > 0
         ? {

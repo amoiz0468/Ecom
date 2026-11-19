@@ -61,7 +61,7 @@ function AdminLoginForm() {
           <Link href="/" className="inline-flex flex-col items-center gap-2">
             <Image
               src="/logo.png"
-              alt="Almoin Crockery"
+              alt="Almoin Store"
               width={76}
               height={91}
               priority
