@@ -45,7 +45,7 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
             />
             <div>
               <h1 className="font-serif text-2xl font-bold tracking-wider">
-                ALMOIN CROCKERY
+                ALMOIN STORE
               </h1>
               <p className="text-[10px] uppercase tracking-widest text-stone-500 font-sans">
                 Luxury Crockery &amp; Fine Ceramics • Pakistan

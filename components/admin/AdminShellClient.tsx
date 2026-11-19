@@ -55,7 +55,7 @@ export function AdminShellClient({
               />
               <div>
                 <span className="font-serif text-base sm:text-lg font-bold tracking-[0.06em] text-stone-900 block leading-tight">
-                  ALMOIN CROCKERY
+                  ALMOIN STORE
                 </span>
                 <span className="text-[9px] uppercase tracking-[0.18em] text-amber-800 font-semibold block mt-0.5">
                   Store Operations Portal

@@ -688,6 +688,147 @@ export const OrderRepository = {
     return this.getOrderByIdOrNumber(existing.id);
   },
 
+  async updateOrderDetails(
+    orderId: string,
+    updates: {
+      guest_name?: string;
+      guest_phone?: string;
+      guest_email?: string;
+      recipient_name?: string;
+      shipping_phone?: string;
+      street_address?: string;
+      landmark?: string;
+      city?: string;
+      province?: string;
+      notes?: string;
+      courier_code?: CourierCode;
+      tracking_number?: string;
+      status?: OrderStatus;
+      payment_status?: PaymentStatus;
+      shipping_fee_pkr?: number;
+      discount_pkr?: number;
+    },
+    actor = "admin"
+  ): Promise<Order | null> {
+    const existing = await this.getOrderByIdOrNumber(orderId);
+    if (!existing) return null;
+
+    if (existing.status === "delivered") {
+      throw new Error("Delivered orders cannot be edited.");
+    }
+
+    const nextStatus = updates.status || existing.status;
+    if (nextStatus !== existing.status) {
+      await this.updateOrderStatusTransaction(
+        existing.id,
+        nextStatus,
+        updates.payment_status || existing.payment_status,
+        updates.tracking_number !== undefined
+          ? updates.tracking_number
+          : existing.tracking_number,
+        updates.courier_code || existing.courier_code,
+        actor
+      );
+    }
+
+    const nextShippingFee =
+      updates.shipping_fee_pkr !== undefined
+        ? Math.max(0, Math.round(Number(updates.shipping_fee_pkr) || 0))
+        : existing.shipping_fee_pkr;
+    const nextDiscount =
+      updates.discount_pkr !== undefined
+        ? Math.max(0, Math.round(Number(updates.discount_pkr) || 0))
+        : existing.discount_pkr;
+
+    const nextTotal = Math.max(
+      0,
+      existing.subtotal_pkr -
+        nextDiscount +
+        nextShippingFee +
+        existing.cod_fee_pkr +
+        existing.fragile_packaging_fee_pkr
+    );
+
+    const nextGuestInfo = {
+      ...existing.guest_info,
+      name:
+        updates.guest_name !== undefined
+          ? updates.guest_name.trim()
+          : existing.guest_info.name,
+      phone:
+        updates.guest_phone !== undefined
+          ? updates.guest_phone.trim()
+          : existing.guest_info.phone,
+      email:
+        updates.guest_email !== undefined
+          ? updates.guest_email.trim()
+          : existing.guest_info.email,
+    };
+
+    const nextShippingAddress = {
+      ...existing.shipping_address,
+      recipient_name:
+        updates.recipient_name !== undefined
+          ? updates.recipient_name.trim()
+          : existing.shipping_address.recipient_name,
+      phone:
+        updates.shipping_phone !== undefined
+          ? updates.shipping_phone.trim()
+          : existing.shipping_address.phone,
+      street_address:
+        updates.street_address !== undefined
+          ? updates.street_address.trim()
+          : existing.shipping_address.street_address,
+      landmark:
+        updates.landmark !== undefined
+          ? updates.landmark.trim()
+          : existing.shipping_address.landmark,
+      city:
+        updates.city !== undefined
+          ? updates.city.trim()
+          : existing.shipping_address.city,
+      province:
+        updates.province !== undefined
+          ? updates.province.trim()
+          : existing.shipping_address.province,
+    };
+
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        guest_info: nextGuestInfo,
+        shipping_address: nextShippingAddress,
+        notes:
+          updates.notes !== undefined
+            ? updates.notes.trim() || null
+            : existing.notes ?? null,
+        courier_code: updates.courier_code || existing.courier_code,
+        tracking_number:
+          updates.tracking_number !== undefined
+            ? updates.tracking_number.trim() || null
+            : existing.tracking_number ?? null,
+        payment_status: updates.payment_status || existing.payment_status,
+        shipping_fee_pkr: nextShippingFee,
+        discount_pkr: nextDiscount,
+        total_pkr: nextTotal,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id);
+
+    if (error) throw new Error(`Update order details: ${error.message}`);
+
+    await appendAuditLog({
+      actor,
+      action: "ORDER_DETAILS_UPDATED",
+      entity_type: "order",
+      entity_id: existing.order_number,
+      details: `Edited details for order ${existing.order_number}`,
+    });
+
+    return this.getOrderByIdOrNumber(existing.id);
+  },
+
   async attachPaymentProof(
     orderIdOrNumber: string,
     proofUrl: string

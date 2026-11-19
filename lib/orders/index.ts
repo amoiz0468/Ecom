@@ -410,6 +410,51 @@ export async function updateOrderStatus(
   );
 }
 
+export async function updateOrderDetailsAction(
+  orderId: string,
+  updates: {
+    guest_name?: string;
+    guest_phone?: string;
+    guest_email?: string;
+    recipient_name?: string;
+    shipping_phone?: string;
+    street_address?: string;
+    landmark?: string;
+    city?: string;
+    province?: string;
+    notes?: string;
+    courier_code?: CourierCode;
+    tracking_number?: string;
+    status?: OrderStatus;
+    payment_status?: PaymentStatus;
+    shipping_fee_pkr?: number;
+    discount_pkr?: number;
+  }
+): Promise<{ success: boolean; order?: Order; error?: string }> {
+  try {
+    const session = await requireAdminAuth();
+    const updated = await OrderRepository.updateOrderDetails(
+      orderId,
+      updates,
+      session.username
+    );
+    if (!updated) {
+      return { success: false, error: "Order not found." };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${updated.id}/invoice`);
+    return { success: true, order: updated };
+  } catch (err) {
+    return {
+      success: false,
+      error:
+        (err instanceof Error && err.message) ||
+        "Failed to update order details.",
+    };
+  }
+}
+
 export async function deleteOrderAction(orderId: string): Promise<{
   success: boolean;
 }> {

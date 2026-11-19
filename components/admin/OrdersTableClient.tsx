@@ -5,8 +5,30 @@ import Link from "next/link";
 import { Order, OrderStatus, PaymentStatus, CourierCode } from "@/types";
 import { formatPKR } from "@/lib/utils";
 import { COURIERS } from "@/lib/couriers";
-import { updateOrderStatus, deleteOrderAction } from "@/lib/orders";
-import { Truck, Printer, RefreshCw, ExternalLink, Trash2 } from "lucide-react";
+import {
+  updateOrderStatus,
+  updateOrderDetailsAction,
+  deleteOrderAction,
+} from "@/lib/orders";
+import { PAKISTAN_CITIES } from "@/lib/data/constants";
+import {
+  Truck,
+  Printer,
+  RefreshCw,
+  ExternalLink,
+  Trash2,
+  Pencil,
+  X,
+  Check,
+  Loader2,
+} from "lucide-react";
+
+const PAYMENT_BADGE_CLASS: Record<PaymentStatus, string> = {
+  paid: "bg-emerald-50 border-emerald-300 text-emerald-800",
+  awaiting_verification: "bg-purple-50 border-purple-300 text-purple-800",
+  refunded: "bg-stone-100 border-stone-300 text-stone-700",
+  unpaid: "bg-amber-50 border-amber-300 text-amber-800",
+};
 
 export function OrdersTableClient({
   initialOrders,
@@ -19,6 +41,28 @@ export function OrdersTableClient({
   const [trackingInput, setTrackingInput] = useState("");
   const [courierInput, setCourierInput] = useState<CourierCode>("tcs");
   const [refreshing, setRefreshing] = useState(false);
+
+  // Full Order Details Modal state (allowed when order.status !== "delivered")
+  const [modalOrder, setModalOrder] = useState<Order | null>(null);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
+  const [editGuestName, setEditGuestName] = useState("");
+  const [editGuestPhone, setEditGuestPhone] = useState("");
+  const [editGuestEmail, setEditGuestEmail] = useState("");
+  const [editRecipientName, setEditRecipientName] = useState("");
+  const [editShippingPhone, setEditShippingPhone] = useState("");
+  const [editStreetAddress, setEditStreetAddress] = useState("");
+  const [editLandmark, setEditLandmark] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editProvince, setEditProvince] = useState("");
+  const [editCourier, setEditCourier] = useState<CourierCode>("tcs");
+  const [editTracking, setEditTracking] = useState("");
+  const [editOrderStatus, setEditOrderStatus] = useState<OrderStatus>("pending");
+  const [editPaymentStatus, setEditPaymentStatus] =
+    useState<PaymentStatus>("unpaid");
+  const [editShippingFee, setEditShippingFee] = useState<number>(0);
+  const [editDiscount, setEditDiscount] = useState<number>(0);
+  const [editNotes, setEditNotes] = useState("");
 
   // Sync when server props update
   useEffect(() => {
@@ -82,20 +126,82 @@ export function OrdersTableClient({
     }
   };
 
-  const handleSaveTracking = async (orderId: string) => {
+  const handleSaveTracking = async (order: Order) => {
     if (!trackingInput.trim()) return;
+    const nextStatus =
+      order.status === "pending" ||
+      order.status === "confirmed" ||
+      order.status === "packed"
+        ? "shipped"
+        : order.status;
     const updated = await updateOrderStatus(
-      orderId,
-      "shipped",
+      order.id,
+      nextStatus,
       undefined,
       trackingInput.trim(),
       courierInput
     );
     if (updated) {
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
       setEditingOrderId(null);
       setTrackingInput("");
     }
+  };
+
+  const openOrderEditor = (order: Order) => {
+    if (order.status === "delivered") return;
+    setModalOrder(order);
+    setDetailsError("");
+    setEditGuestName(order.guest_info.name || "");
+    setEditGuestPhone(order.guest_info.phone || "");
+    setEditGuestEmail(order.guest_info.email || "");
+    setEditRecipientName(order.shipping_address.recipient_name || "");
+    setEditShippingPhone(order.shipping_address.phone || "");
+    setEditStreetAddress(order.shipping_address.street_address || "");
+    setEditLandmark(order.shipping_address.landmark || "");
+    setEditCity(order.shipping_address.city || "");
+    setEditProvince(order.shipping_address.province || "");
+    setEditCourier(order.courier_code || "tcs");
+    setEditTracking(order.tracking_number || "");
+    setEditOrderStatus(order.status);
+    setEditPaymentStatus(order.payment_status);
+    setEditShippingFee(order.shipping_fee_pkr || 0);
+    setEditDiscount(order.discount_pkr || 0);
+    setEditNotes(order.notes || "");
+  };
+
+  const handleSaveOrderDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalOrder) return;
+    setSavingDetails(true);
+    setDetailsError("");
+    const res = await updateOrderDetailsAction(modalOrder.id, {
+      guest_name: editGuestName,
+      guest_phone: editGuestPhone,
+      guest_email: editGuestEmail,
+      recipient_name: editRecipientName,
+      shipping_phone: editShippingPhone,
+      street_address: editStreetAddress,
+      landmark: editLandmark,
+      city: editCity,
+      province: editProvince,
+      courier_code: editCourier,
+      tracking_number: editTracking,
+      status: editOrderStatus,
+      payment_status: editPaymentStatus,
+      shipping_fee_pkr: editShippingFee,
+      discount_pkr: editDiscount,
+      notes: editNotes,
+    });
+    setSavingDetails(false);
+    if (!res.success || !res.order) {
+      setDetailsError(res.error || "Failed to save order updates.");
+      return;
+    }
+    setOrders((prev) =>
+      prev.map((o) => (o.id === res.order!.id ? res.order! : o))
+    );
+    setModalOrder(null);
   };
 
   const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
@@ -214,17 +320,28 @@ export function OrdersTableClient({
 
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col gap-1 items-start">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${
-                            order.payment_status === "paid"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : order.payment_status === "awaiting_verification"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-amber-100 text-amber-800"
+                        <select
+                          value={order.payment_status}
+                          onChange={(e) =>
+                            handleUpdateStatus(
+                              order.id,
+                              order.status,
+                              e.target.value as PaymentStatus
+                            )
+                          }
+                          aria-label={`Payment status for ${order.order_number}`}
+                          className={`text-[11px] px-2 py-1 rounded-md border font-semibold capitalize cursor-pointer ${
+                            PAYMENT_BADGE_CLASS[order.payment_status] ||
+                            PAYMENT_BADGE_CLASS.unpaid
                           }`}
                         >
-                          {order.payment_status.replace("_", " ")}
-                        </span>
+                          <option value="unpaid">Unpaid</option>
+                          <option value="awaiting_verification">
+                            Awaiting Verification
+                          </option>
+                          <option value="paid">Paid</option>
+                          <option value="refunded">Refunded</option>
+                        </select>
                         {order.payment_proof_url && (
                           <a
                             href={order.payment_proof_url}
@@ -234,17 +351,6 @@ export function OrdersTableClient({
                           >
                             View Receipt <ExternalLink className="w-2.5 h-2.5" />
                           </a>
-                        )}
-                        {order.payment_status === "awaiting_verification" && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleUpdateStatus(order.id, order.status, "paid")
-                            }
-                            className="text-[10px] text-emerald-700 hover:underline font-semibold cursor-pointer"
-                          >
-                            Approve Proof
-                          </button>
                         )}
                       </div>
                     </td>
@@ -270,14 +376,7 @@ export function OrdersTableClient({
                     </td>
 
                     <td className="py-3.5 px-4">
-                      {order.tracking_number ? (
-                        <div className="font-mono text-xs text-stone-800">
-                          <span>{order.tracking_number}</span>
-                          <span className="block text-[10px] text-stone-500 uppercase">
-                            {order.courier_code}
-                          </span>
-                        </div>
-                      ) : editingOrderId === order.id ? (
+                      {editingOrderId === order.id ? (
                         <div className="flex items-center gap-1">
                           <select
                             value={courierInput}
@@ -301,16 +400,52 @@ export function OrdersTableClient({
                           />
                           <button
                             type="button"
-                            onClick={() => handleSaveTracking(order.id)}
+                            onClick={() => handleSaveTracking(order)}
                             className="px-2 py-1 bg-amber-700 text-white rounded text-[10px] cursor-pointer"
                           >
                             Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingOrderId(null);
+                              setTrackingInput("");
+                            }}
+                            className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
+                            aria-label="Cancel tracking edit"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : order.tracking_number ? (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-mono text-xs text-stone-800">
+                            <span>{order.tracking_number}</span>
+                            <span className="block text-[10px] text-stone-500 uppercase">
+                              {order.courier_code}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingOrderId(order.id);
+                              setCourierInput(order.courier_code || "tcs");
+                              setTrackingInput(order.tracking_number || "");
+                            }}
+                            className="p-1 text-stone-400 hover:text-amber-800 rounded hover:bg-amber-50 cursor-pointer"
+                            title="Edit Courier / Tracking"
+                          >
+                            <Pencil className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setEditingOrderId(order.id)}
+                          onClick={() => {
+                            setEditingOrderId(order.id);
+                            setCourierInput(order.courier_code || "tcs");
+                            setTrackingInput("");
+                          }}
                           className="text-[11px] text-amber-700 hover:underline flex items-center gap-1 cursor-pointer"
                         >
                           <Truck className="w-3.5 h-3.5" /> Assign Tracking
@@ -320,6 +455,16 @@ export function OrdersTableClient({
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="inline-flex items-center gap-1">
+                        {order.status !== "delivered" && (
+                          <button
+                            type="button"
+                            onClick={() => openOrderEditor(order)}
+                            className="p-1.5 inline-flex items-center gap-1 text-amber-800 hover:bg-amber-50 rounded font-medium cursor-pointer"
+                            title="Edit Order Details"
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Edit
+                          </button>
+                        )}
                         <Link
                           href={`/admin/orders/${order.id}/invoice`}
                           target="_blank"
@@ -347,6 +492,315 @@ export function OrdersTableClient({
           </div>
         )}
       </div>
+
+      {/* Edit Order Details Modal (for non-delivered orders) */}
+      {modalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-stone-950/50 backdrop-blur-xs"
+            onClick={() => setModalOrder(null)}
+          />
+          <form
+            onSubmit={handleSaveOrderDetails}
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-stone-200 shadow-2xl p-6 space-y-5 text-xs"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-stone-900">
+                  Edit Order #{modalOrder.order_number}
+                </h2>
+                <p className="text-[11px] text-stone-500">
+                  Update customer, shipping address, courier, payment, or fee details before delivery.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalOrder(null)}
+                className="p-1.5 rounded-full hover:bg-stone-100 text-stone-500 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {detailsError && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
+                {detailsError}
+              </div>
+            )}
+
+            {/* Customer & Recipient */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editGuestName}
+                  onChange={(e) => setEditGuestName(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Customer Phone
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editGuestPhone}
+                  onChange={(e) => setEditGuestPhone(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Customer Email
+                </label>
+                <input
+                  type="email"
+                  value={editGuestEmail}
+                  onChange={(e) => setEditGuestEmail(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="pt-2 border-t border-stone-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Recipient Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editRecipientName}
+                  onChange={(e) => setEditRecipientName(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Delivery Phone
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editShippingPhone}
+                  onChange={(e) => setEditShippingPhone(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editStreetAddress}
+                  onChange={(e) => setEditStreetAddress(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  City
+                </label>
+                <select
+                  value={editCity}
+                  onChange={(e) => setEditCity(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                >
+                  {!PAKISTAN_CITIES.includes(editCity) && editCity && (
+                    <option value={editCity}>{editCity}</option>
+                  )}
+                  {PAKISTAN_CITIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Province / Landmark
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={editProvince}
+                    onChange={(e) => setEditProvince(e.target.value)}
+                    placeholder="Province"
+                    className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                  />
+                  <input
+                    type="text"
+                    value={editLandmark}
+                    onChange={(e) => setEditLandmark(e.target.value)}
+                    placeholder="Landmark"
+                    className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Courier, Status, Payment & Fees */}
+            <div className="pt-2 border-t border-stone-100 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Courier
+                </label>
+                <select
+                  value={editCourier}
+                  onChange={(e) => setEditCourier(e.target.value as CourierCode)}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50 uppercase"
+                >
+                  {Object.keys(COURIERS).map((c) => (
+                    <option key={c} value={c}>
+                      {c.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Tracking #
+                </label>
+                <input
+                  type="text"
+                  value={editTracking}
+                  onChange={(e) => setEditTracking(e.target.value)}
+                  placeholder="Consignment #"
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50 font-mono"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Order Status
+                </label>
+                <select
+                  value={editOrderStatus}
+                  onChange={(e) =>
+                    setEditOrderStatus(e.target.value as OrderStatus)
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50 capitalize"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="packed">Packed</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Payment Status
+                </label>
+                <select
+                  value={editPaymentStatus}
+                  onChange={(e) =>
+                    setEditPaymentStatus(e.target.value as PaymentStatus)
+                  }
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50 capitalize"
+                >
+                  <option value="unpaid">Unpaid</option>
+                  <option value="awaiting_verification">
+                    Awaiting Verification
+                  </option>
+                  <option value="paid">Paid</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Shipping Fee (PKR)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editShippingFee}
+                  onChange={(e) => setEditShippingFee(Number(e.target.value))}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Discount (PKR)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editDiscount}
+                  onChange={(e) => setEditDiscount(Number(e.target.value))}
+                  className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-stone-700 block mb-1">
+                  Recalculated Total
+                </label>
+                <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 font-serif font-bold text-sm text-amber-900">
+                  {formatPKR(
+                    Math.max(
+                      0,
+                      modalOrder.subtotal_pkr -
+                        (Number(editDiscount) || 0) +
+                        (Number(editShippingFee) || 0) +
+                        modalOrder.cod_fee_pkr +
+                        modalOrder.fragile_packaging_fee_pkr
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-semibold text-stone-700 block mb-1">
+                Order Notes
+              </label>
+              <textarea
+                rows={2}
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Delivery instructions or internal notes..."
+                className="w-full p-2 rounded-lg border border-stone-300 bg-stone-50"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-200">
+              <button
+                type="button"
+                onClick={() => setModalOrder(null)}
+                className="px-4 py-2 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingDetails}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-stone-900 hover:bg-amber-800 text-white font-semibold disabled:opacity-50 cursor-pointer"
+              >
+                {savingDetails ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

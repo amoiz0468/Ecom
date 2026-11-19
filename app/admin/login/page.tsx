@@ -68,7 +68,7 @@ function AdminLoginForm() {
               className="h-20 w-auto object-contain"
             />
             <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.1em] text-stone-900">
-              ALMOIN CROCKERY
+              ALMOIN STORE
             </span>
           </Link>
           <p className="text-[10px] uppercase tracking-[0.28em] text-amber-800 font-semibold">
